@@ -1443,10 +1443,18 @@ JSON response:
 
     try {
       const alpaca = createAlpacaProviders(this.env);
-      const quote = await alpaca.marketData.getQuote(symbol).catch(() => null);
-      const price = quote?.ask_price || quote?.bid_price || 0;
+      
+      const isCrypto = symbol.includes("/") || symbol.endsWith("USD");
+      let price = 0;
+      if (isCrypto) {
+        const snapshot = await alpaca.marketData.getCryptoSnapshot(symbol).catch(() => null);
+        price = snapshot?.latest_quote?.ask_price || snapshot?.latest_quote?.bid_price || snapshot?.latest_trade?.price || 0;
+      } else {
+        const quote = await alpaca.marketData.getQuote(symbol).catch(() => null);
+        price = quote?.ask_price || quote?.bid_price || 0;
+      }
 
-      const prompt = `Should we BUY this stock based on social sentiment and fundamentals?
+      const prompt = `Should we BUY this ${isCrypto ? "crypto" : "stock"} based on social sentiment and fundamentals?
 
 SYMBOL: ${symbol}
 SENTIMENT: ${(sentimentScore * 100).toFixed(0)}% bullish (sources: ${sources.join(", ")})
@@ -1938,12 +1946,13 @@ Response format:
     }
     
     try {
+      const isCrypto = symbol.includes("/") || symbol.endsWith("USD");
       const order = await alpaca.trading.createOrder({
         symbol,
         notional: Math.round(positionSize * 100) / 100,
         side: "buy",
         type: "market",
-        time_in_force: "day",
+        time_in_force: isCrypto ? "gtc" : "day",
       });
       
       this.log("Executor", "buy_executed", { symbol, status: order.status, size: positionSize });
