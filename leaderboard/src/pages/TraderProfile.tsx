@@ -102,7 +102,7 @@ export function TraderProfile({ username, navigate }: TraderProfileProps) {
           e.preventDefault();
           navigate("/");
         }}
-        className="text-[10px] text-hud-text-dim hover:text-hud-text uppercase tracking-[0.1em] mb-4 inline-block"
+        className="text-[11px] text-hud-text-dim hover:text-hud-text uppercase tracking-[0.1em] mb-4 inline-block"
       >
         &larr; Leaderboard
       </a>
@@ -135,7 +135,7 @@ export function TraderProfile({ username, navigate }: TraderProfileProps) {
             href={trader.github_repo}
             target="_blank"
             rel="noopener noreferrer"
-            className="hud-button text-[9px]"
+            className="hud-button text-[10px]"
           >
             View Code
           </a>

@@ -41,7 +41,7 @@ const ASSET_FILTERS: { value: AssetFilter; label: string }[] = [
 /** Shared style for pill-style toggle buttons in the filter bar. */
 const pillClass = (active: boolean) =>
   clsx(
-    "bg-transparent border-none font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 cursor-pointer transition-colors",
+    "bg-transparent border-none font-mono text-[11px] uppercase tracking-[0.1em] px-2 py-1 cursor-pointer transition-colors",
     active ? "text-hud-text-bright" : "text-hud-text-dim hover:text-hud-text"
   );
 
@@ -154,7 +154,7 @@ export function Leaderboard({ navigate }: LeaderboardProps) {
                   <div className="mt-2">
                     <button
                       onClick={fetchLeaderboard}
-                      className="hud-button text-[9px]"
+                      className="hud-button text-[10px]"
                     >
                       Retry
                     </button>
@@ -169,7 +169,7 @@ export function Leaderboard({ navigate }: LeaderboardProps) {
                   <div className="mt-2">
                     <button
                       onClick={() => navigate("/join")}
-                      className="hud-button text-[9px]"
+                      className="hud-button text-[10px]"
                     >
                       Be the first
                     </button>
@@ -264,7 +264,7 @@ function FilterBar({
         <select
           value={sort}
           onChange={(e) => onSortChange(e.target.value as SortField)}
-          className="hud-input text-[10px] py-1"
+          className="hud-input text-[11px] py-1"
         >
           {SORTS.map((s) => (
             <option key={s.value} value={s.value}>

@@ -62,10 +62,10 @@ export function Join() {
                 tune the parameters, add your own signals.
               </p>
               <a
-                href="https://github.com/kalepail/mahoraga"
+                href="https://github.com/ygwyg/MAHORAGA"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hud-button mt-3 inline-block text-[9px]"
+                className="hud-button mt-3 inline-block text-[10px]"
               >
                 View on GitHub
               </a>
@@ -141,7 +141,7 @@ export function Join() {
           </div>
 
           {status === "error" && (
-            <div className="text-hud-error text-[11px]">{errorMsg}</div>
+            <div className="text-hud-error text-[12px]">{errorMsg}</div>
           )}
 
           <button

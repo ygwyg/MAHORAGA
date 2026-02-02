@@ -26,10 +26,10 @@ export function Header({ navigate, currentPage }: HeaderProps) {
           <span className="text-[14px] font-medium tracking-[0.1em] text-hud-text-bright">
             MAHORAGA
           </span>
-          <span className="text-[10px] tracking-[0.2em] text-hud-text-dim">
+          <span className="text-[11px] tracking-[0.2em] text-hud-text-dim">
             //
           </span>
-          <span className="text-[10px] tracking-[0.15em] text-hud-text-dim uppercase">
+          <span className="text-[11px] tracking-[0.15em] text-hud-text-dim uppercase">
             Leaderboard
           </span>
         </a>
@@ -44,7 +44,7 @@ export function Header({ navigate, currentPage }: HeaderProps) {
                 navigate(link.path);
               }}
               className={clsx(
-                "font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-2 transition-colors duration-200",
+                "font-mono text-[11px] uppercase tracking-[0.1em] px-3 py-2 transition-colors duration-200",
                 currentPage === link.page
                   ? "text-hud-text-bright"
                   : "text-hud-text-dim hover:text-hud-text"

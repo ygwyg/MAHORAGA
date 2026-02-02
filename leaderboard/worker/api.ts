@@ -9,18 +9,19 @@
  * - Registration
  */
 
-import { decryptToken, encryptToken } from "./crypto";
+import { encryptToken } from "./crypto";
 import {
   getCachedLeaderboard,
   getCachedStats,
   getCachedTraderProfile,
   setCachedTraderProfile,
+  getCachedTraderTrades,
+  setCachedTraderTrades,
+  getCachedTraderEquity,
+  setCachedTraderEquity,
   leaderboardCacheKey,
-  invalidateTraderCache,
-  invalidateLeaderboardCaches,
 } from "./cache";
 import { json, safeParseInt, errorJson } from "./helpers";
-import { computeAndStoreCompositeScores } from "./cron";
 import type {
   SyncMessage,
   TraderDbRow,
@@ -216,6 +217,13 @@ export async function getTraderTrades(
   const limit = Math.min(safeParseInt(url.searchParams.get("limit"), 50), 100);
   const offset = safeParseInt(url.searchParams.get("offset"), 0);
 
+  const cached = await getCachedTraderTrades(env, username, limit, offset);
+  if (cached) {
+    return new Response(cached, {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const trader = await env.DB.prepare(
     `SELECT id FROM traders WHERE username = ?1 AND is_active = 1`
   ).bind(username).first<Pick<TraderDbRow, "id">>();
@@ -228,7 +236,9 @@ export async function getTraderTrades(
      LIMIT ?2 OFFSET ?3`
   ).bind(trader.id, limit, offset).all();
 
-  return json({ trades: result.results, meta: { limit, offset } });
+  const data = { trades: result.results, meta: { limit, offset } };
+  await setCachedTraderTrades(env, username, limit, offset, data);
+  return json(data);
 }
 
 export async function getTraderEquity(
@@ -237,7 +247,14 @@ export async function getTraderEquity(
   env: Env
 ): Promise<Response> {
   const url = new URL(request.url);
-  const days = safeParseInt(url.searchParams.get("days"), 90);
+  const days = Math.min(safeParseInt(url.searchParams.get("days"), 90), 365);
+
+  const cached = await getCachedTraderEquity(env, username, days);
+  if (cached) {
+    return new Response(cached, {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   const trader = await env.DB.prepare(
     `SELECT id FROM traders WHERE username = ?1 AND is_active = 1`
@@ -252,50 +269,9 @@ export async function getTraderEquity(
      ORDER BY timestamp ASC`
   ).bind(trader.id, days).all();
 
-  return json({ equity: result.results });
-}
-
-// ---------------------------------------------------------------------------
-// Manual Sync
-// ---------------------------------------------------------------------------
-
-export async function triggerManualSync(
-  username: string,
-  env: Env
-): Promise<Response> {
-  const trader = await env.DB.prepare(
-    `SELECT t.id, ot.access_token_encrypted
-     FROM traders t
-     INNER JOIN oauth_tokens ot ON ot.trader_id = t.id
-     WHERE t.username = ?1 AND t.is_active = 1`
-  ).bind(username).first<Pick<TraderDbRow, "id"> & Pick<OAuthTokenDbRow, "access_token_encrypted">>();
-
-  if (!trader) {
-    return json({ error: "Trader not found or Alpaca not connected" }, 404);
-  }
-
-  let token: string;
-  try {
-    token = await decryptToken(
-      trader.access_token_encrypted,
-      env.ENCRYPTION_KEY,
-      trader.id
-    );
-  } catch {
-    return errorJson("Failed to decrypt token", 500);
-  }
-
-  const doId = env.SYNCER.idFromName(trader.id);
-  const stub = env.SYNCER.get(doId);
-  const result = await stub.sync(trader.id, token);
-
-  if (result.success) {
-    await computeAndStoreCompositeScores(env);
-    await invalidateTraderCache(env, username);
-    await invalidateLeaderboardCaches(env);
-  }
-
-  return json(result);
+  const data = { equity: result.results };
+  await setCachedTraderEquity(env, username, days, data);
+  return json(data);
 }
 
 // ---------------------------------------------------------------------------

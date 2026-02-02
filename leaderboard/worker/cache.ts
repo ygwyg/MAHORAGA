@@ -67,6 +67,58 @@ export async function setCachedTraderProfile(
 }
 
 // ---------------------------------------------------------------------------
+// Trader trades cache
+// ---------------------------------------------------------------------------
+
+export async function getCachedTraderTrades(
+  env: Env,
+  username: string,
+  limit: number,
+  offset: number
+): Promise<string | null> {
+  return env.KV.get(`trader:${username}:trades:${limit}:${offset}`, "text");
+}
+
+export async function setCachedTraderTrades(
+  env: Env,
+  username: string,
+  limit: number,
+  offset: number,
+  data: unknown
+): Promise<void> {
+  await env.KV.put(
+    `trader:${username}:trades:${limit}:${offset}`,
+    JSON.stringify(data),
+    { expirationTtl: TRADER_TTL }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Trader equity cache
+// ---------------------------------------------------------------------------
+
+export async function getCachedTraderEquity(
+  env: Env,
+  username: string,
+  days: number
+): Promise<string | null> {
+  return env.KV.get(`trader:${username}:equity:${days}`, "text");
+}
+
+export async function setCachedTraderEquity(
+  env: Env,
+  username: string,
+  days: number,
+  data: unknown
+): Promise<void> {
+  await env.KV.put(
+    `trader:${username}:equity:${days}`,
+    JSON.stringify(data),
+    { expirationTtl: TRADER_TTL }
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Cache key generation
 // ---------------------------------------------------------------------------
 
@@ -83,12 +135,15 @@ export function leaderboardCacheKey(
 // Targeted invalidation helpers
 // ---------------------------------------------------------------------------
 
-/** Invalidate a single trader's profile cache after sync. */
+/** Invalidate a single trader's profile, trades, and equity caches after sync. */
 export async function invalidateTraderCache(
   env: Env,
   username: string
 ): Promise<void> {
-  await env.KV.delete(`trader:${username}`);
+  const list = await env.KV.list({ prefix: `trader:${username}` });
+  for (const key of list.keys) {
+    await env.KV.delete(key.name);
+  }
 }
 
 /** Invalidate all leaderboard-prefixed caches (leaderboard views + stats). */

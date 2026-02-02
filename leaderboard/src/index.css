@@ -9,18 +9,18 @@
   --color-hud-line: rgba(122, 155, 168, 0.15);
 
   --color-hud-text: #7a9ba8;
-  --color-hud-text-dim: #4a5a62;
+  --color-hud-text-dim: #708a94;
   --color-hud-text-bright: #c8dce4;
 
   --color-hud-success: #4a9868;
   --color-hud-warning: #b89848;
-  --color-hud-error: #b84848;
-  --color-hud-purple: #8a6ab8;
+  --color-hud-error: #d45555;
+  --color-hud-purple: #9575c0;
   --color-hud-cyan: #5a9ab8;
 
   --color-rank-gold: #b89848;
   --color-rank-silver: #7a9ba8;
-  --color-rank-bronze: #8a6ab8;
+  --color-rank-bronze: #9575c0;
 
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
 }
@@ -32,7 +32,7 @@
 
   html {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
     background-color: var(--color-hud-bg);
     color: var(--color-hud-text);
     letter-spacing: 0.05em;
@@ -76,7 +76,7 @@
   }
 
   .hud-label {
-    font-size: 8px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: var(--color-hud-text-dim);
@@ -106,7 +106,7 @@
   }
 
   .hud-value-sm {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 400;
     line-height: 1;
     color: var(--color-hud-text);
@@ -117,7 +117,7 @@
     border: 0.5px solid var(--color-hud-line);
     color: var(--color-hud-text);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     padding: 6px 10px;
     outline: none;
     transition: border-color 0.2s;
@@ -132,7 +132,7 @@
     border: 0.5px solid var(--color-hud-primary);
     color: var(--color-hud-primary);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 8px 16px;
@@ -155,7 +155,7 @@
     border: 0.5px solid var(--color-hud-primary);
     color: var(--color-hud-bg);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 8px 16px;

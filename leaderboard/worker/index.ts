@@ -17,7 +17,6 @@ import {
   getTraderProfile,
   getTraderTrades,
   getTraderEquity,
-  triggerManualSync,
   handleOAuthCallback,
   handleRegister,
 } from "./api";
@@ -89,12 +88,6 @@ async function handleApi(
     const equityMatch = path.match(/^\/api\/trader\/([a-zA-Z0-9_]+)\/equity$/);
     if (equityMatch && request.method === "GET") {
       return await getTraderEquity(equityMatch[1], request, env);
-    }
-
-    // Manual sync
-    const syncMatch = path.match(/^\/api\/trader\/([a-zA-Z0-9_]+)\/sync$/);
-    if (syncMatch && request.method === "POST") {
-      return await triggerManualSync(syncMatch[1], env);
     }
 
     // OAuth callback (authorize URL is returned by /api/register)

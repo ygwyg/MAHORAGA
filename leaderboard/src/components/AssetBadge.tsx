@@ -16,7 +16,7 @@ export function AssetBadge({ assetClass }: AssetBadgeProps) {
   return (
     <span
       className={clsx(
-        "inline-block text-[7px] tracking-[0.15em] uppercase border px-[6px] py-[2px]",
+        "inline-block text-[9px] tracking-[0.15em] uppercase border px-[6px] py-[2px]",
         color
       )}
     >
