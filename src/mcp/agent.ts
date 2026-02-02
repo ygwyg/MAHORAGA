@@ -336,7 +336,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
               assetClass = "crypto";
             }
           } catch {
-            if (input.symbol.includes("/") || input.symbol.toUpperCase().endsWith("USD")) {
+            if (input.symbol.includes("/")) {
               assetClass = "crypto";
             }
           }

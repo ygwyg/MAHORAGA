@@ -1444,7 +1444,7 @@ JSON response:
     try {
       const alpaca = createAlpacaProviders(this.env);
       
-      const isCrypto = symbol.includes("/") || symbol.endsWith("USD");
+      const isCrypto = symbol.includes("/");
       let price = 0;
       if (isCrypto) {
         const snapshot = await alpaca.marketData.getCryptoSnapshot(symbol).catch(() => null);
@@ -1946,7 +1946,7 @@ Response format:
     }
     
     try {
-      const isCrypto = symbol.includes("/") || symbol.endsWith("USD");
+      const isCrypto = symbol.includes("/");
       const order = await alpaca.trading.createOrder({
         symbol,
         notional: Math.round(positionSize * 100) / 100,
