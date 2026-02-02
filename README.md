@@ -1,8 +1,13 @@
+⚠️ **Warning:** This software is provided for educational and informational purposes only. Nothing in this repository constitutes financial, investment, legal, or tax advice.
+
+
+
+
 # MAHORAGA
 
 An autonomous, LLM-powered trading agent that adapts to social sentiment and makes trading decisions using AI.
 
-[![Discord](https://img.shields.io/discord/1336186249198739578?color=7289da&label=Discord&logo=discord&logoColor=white)](https://discord.gg/Ys8KpsW5NN)
+[![Discord](https://img.shields.io/discord/1467592472158015553?color=7289da&label=Discord&logo=discord&logoColor=white)](https://discord.gg/Ys8KpsW5NN)
 
 MAHORAGA scrapes StockTwits for trending stocks, uses OpenAI to analyze signals and research opportunities, then executes trades through Alpaca. It's designed as a starting point for building your own agentic trading strategies.
 
