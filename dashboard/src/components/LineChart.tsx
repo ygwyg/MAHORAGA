@@ -197,15 +197,12 @@ interface SparklineProps {
   data: number[]
   width?: number
   height?: number
-  variant?: ChartVariant
-  showChange?: boolean
 }
 
 export function Sparkline({
   data,
   width = 80,
   height = 24,
-  variant = 'cyan',
 }: SparklineProps) {
   if (data.length < 2) return null
   
@@ -224,7 +221,6 @@ export function Sparkline({
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
   const isPositive = data[data.length - 1] >= data[0]
-  const colors = variantColors[variant] || (isPositive ? variantColors.green : variantColors.red)
 
   return (
     <svg width={width} height={height}>

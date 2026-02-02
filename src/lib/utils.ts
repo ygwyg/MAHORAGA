@@ -71,34 +71,16 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function constantTimeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   return str.slice(0, maxLength - 3) + "...";
-}
-
-export function sanitizeForLog(obj: unknown): unknown {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj !== "object") return obj;
-
-  const sensitiveKeys = [
-    "password",
-    "secret",
-    "token",
-    "api_key",
-    "apiKey",
-    "authorization",
-    "approval_token",
-  ];
-
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (sensitiveKeys.some((k) => key.toLowerCase().includes(k))) {
-      result[key] = "[REDACTED]";
-    } else if (typeof value === "object") {
-      result[key] = sanitizeForLog(value);
-    } else {
-      result[key] = value;
-    }
-  }
-  return result;
 }

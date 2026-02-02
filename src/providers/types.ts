@@ -276,15 +276,14 @@ export interface NewsProvider {
   search(query: string, limit?: number): Promise<NewsItem[]>;
 }
 
+import type { ChatCompletionCreateParams } from "openai/resources/chat/completions";
+
 export interface CompletionParams {
   model?: string;
-  messages: Array<{
-    role: "system" | "user" | "assistant";
-    content: string;
-  }>;
+  messages: ChatCompletionCreateParams["messages"];
   temperature?: number;
   max_tokens?: number;
-  response_format?: { type: "json_object" } | { type: "text" };
+  response_format?: ChatCompletionCreateParams["response_format"];
 }
 
 export interface CompletionResult {

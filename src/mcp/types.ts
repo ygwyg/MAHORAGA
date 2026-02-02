@@ -94,38 +94,4 @@ export type EventType =
   | "rumor"
   | "social_momentum";
 
-export interface StructuredEvent {
-  id: string;
-  type: EventType;
-  symbols: string[];
-  summary: string;
-  confidence: number;
-  source_ids: string[];
-  timestamp: string;
-  validated: boolean;
-  validation_errors?: string[];
-}
 
-export type TradeOutcome = "win" | "loss" | "scratch";
-
-export interface TradeJournalEntry {
-  id: string;
-  trade_id?: string;
-  symbol: string;
-  side: "buy" | "sell";
-  entry_price?: number;
-  entry_at?: string;
-  exit_price?: number;
-  exit_at?: string;
-  qty: number;
-  pnl_usd?: number;
-  pnl_pct?: number;
-  hold_duration_mins?: number;
-  signals?: Record<string, unknown>;
-  technicals?: Record<string, unknown>;
-  regime_tags?: string[];
-  event_ids?: string[];
-  outcome?: TradeOutcome;
-  notes?: string;
-  lessons_learned?: string;
-}

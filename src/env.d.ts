@@ -9,7 +9,7 @@ export interface Env {
   ALPACA_API_KEY: string;
   ALPACA_API_SECRET: string;
   ALPACA_PAPER?: string;
-  OPENAI_API_KEY?: string;
+  OPENAI_API_KEY: string;
   TWITTER_BEARER_TOKEN?: string;
   DISCORD_WEBHOOK_URL?: string;
   MAHORAGA_API_TOKEN: string;

@@ -2,27 +2,11 @@ import type { Env } from "./env.d";
 import { MahoragaMcpAgent } from "./mcp/agent";
 import { handleCronEvent } from "./jobs/cron";
 import { getHarnessStub } from "./durable-objects/mahoraga-harness";
+import { isAuthorized } from "./lib/auth";
 
 export { SessionDO } from "./durable-objects/session";
 export { MahoragaMcpAgent };
 export { MahoragaHarness } from "./durable-objects/mahoraga-harness";
-
-function constantTimeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return mismatch === 0;
-}
-
-function isAuthorized(request: Request, env: Env): boolean {
-  const token = env.MAHORAGA_API_TOKEN;
-  if (!token) return false;
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) return false;
-  return constantTimeCompare(authHeader.slice(7), token);
-}
 
 function unauthorizedResponse(): Response {
   return new Response(
@@ -71,7 +55,7 @@ export default {
     }
 
     if (url.pathname.startsWith("/mcp")) {
-      if (!isAuthorized(request, env)) {
+      if (!isAuthorized(request, env.MAHORAGA_API_TOKEN)) {
         return unauthorizedResponse();
       }
       return MahoragaMcpAgent.mount("/mcp", { binding: "MCP_AGENT" }).fetch(request, env, ctx);

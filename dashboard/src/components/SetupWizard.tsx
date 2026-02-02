@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Panel } from './Panel'
+import { authFetch } from '../services/api'
 
 interface SetupWizardProps {
   onComplete: () => void
@@ -27,9 +28,8 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
     setError(null)
 
     try {
-      const res = await fetch('/api/setup/keys', {
+      const res = await authFetch('/api/setup/keys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           alpaca_key: alpacaKey,
           alpaca_secret: alpacaSecret,
@@ -46,7 +46,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       } else {
         setError(data.error || 'Failed to save configuration')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to connect to agent')
     } finally {
       setSaving(false)

@@ -1,5 +1,4 @@
 import { D1Client, PolicyConfigRow } from "../client";
-import { nowISO } from "../../../lib/utils";
 import type { PolicyConfig } from "../../../policy/config";
 
 export async function getPolicyConfig(
@@ -14,18 +13,4 @@ export async function getPolicyConfig(
   }
 
   return JSON.parse(row.config_json) as PolicyConfig;
-}
-
-export async function savePolicyConfig(
-  db: D1Client,
-  config: PolicyConfig
-): Promise<void> {
-  const configJson = JSON.stringify(config);
-
-  await db.run(
-    `INSERT INTO policy_config (id, config_json, updated_at)
-     VALUES (1, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET config_json = excluded.config_json, updated_at = excluded.updated_at`,
-    [configJson, nowISO()]
-  );
 }

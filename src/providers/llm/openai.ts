@@ -1,83 +1,57 @@
+import OpenAI from "openai";
 import { createError, ErrorCode } from "../../lib/errors";
 import type { LLMProvider, CompletionParams, CompletionResult } from "../types";
 
-export interface OpenAIConfig {
+export interface OpenAIProviderConfig {
   apiKey: string;
   model?: string;
   baseUrl?: string;
 }
 
-interface OpenAIResponse {
-  id: string;
-  choices: Array<{
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }>;
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-}
-
 export class OpenAIProvider implements LLMProvider {
-  private apiKey: string;
+  private client: OpenAI;
   private model: string;
-  private baseUrl: string;
 
-  constructor(config: OpenAIConfig) {
-    this.apiKey = config.apiKey;
+  constructor(config: OpenAIProviderConfig) {
+    this.client = new OpenAI({
+      apiKey: config.apiKey,
+      baseURL: config.baseUrl,
+    });
     this.model = config.model ?? "gpt-4o-mini";
-    this.baseUrl = config.baseUrl ?? "https://api.openai.com/v1";
   }
 
   async complete(params: CompletionParams): Promise<CompletionResult> {
-    const body: Record<string, unknown> = {
-      model: params.model ?? this.model,
-      messages: params.messages,
-      temperature: params.temperature ?? 0.7,
-      max_tokens: params.max_tokens ?? 1024,
-    };
+    try {
+      const response = await this.client.chat.completions.create({
+        model: params.model ?? this.model,
+        messages: params.messages,
+        temperature: params.temperature ?? 0.7,
+        max_tokens: params.max_tokens ?? 1024,
+        ...(params.response_format && { response_format: params.response_format }),
+      });
 
-    if (params.response_format) {
-      body.response_format = params.response_format;
+      const content = response.choices[0]?.message?.content ?? "";
+
+      return {
+        content,
+        usage: {
+          prompt_tokens: response.usage?.prompt_tokens ?? 0,
+          completion_tokens: response.usage?.completion_tokens ?? 0,
+          total_tokens: response.usage?.total_tokens ?? 0,
+        },
+      };
+    } catch (error) {
+      if (error instanceof OpenAI.APIError) {
+        throw createError(
+          ErrorCode.PROVIDER_ERROR,
+          `OpenAI API error (${error.status}): ${error.message}`
+        );
+      }
+      throw error;
     }
-
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw createError(
-        ErrorCode.PROVIDER_ERROR,
-        `OpenAI API error (${response.status}): ${errorText}`
-      );
-    }
-
-    const data = (await response.json()) as OpenAIResponse;
-
-    const content = data.choices[0]?.message?.content ?? "";
-
-    return {
-      content,
-      usage: {
-        prompt_tokens: data.usage.prompt_tokens,
-        completion_tokens: data.usage.completion_tokens,
-        total_tokens: data.usage.total_tokens,
-      },
-    };
   }
 }
 
-export function createOpenAIProvider(config: OpenAIConfig): OpenAIProvider {
+export function createOpenAIProvider(config: OpenAIProviderConfig): OpenAIProvider {
   return new OpenAIProvider(config);
 }

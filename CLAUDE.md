@@ -29,7 +29,7 @@ npm run test                   # Vitest watch mode
 npm run test:run               # Vitest single run
 
 # Dashboard (from dashboard/)
-npm run dev                    # Vite dev server (localhost:5173, proxies /api → worker /agent)
+npm run dev                    # Vite dev server (localhost:3000, proxies /api → worker /agent)
 npm run build                  # Production build
 ```
 

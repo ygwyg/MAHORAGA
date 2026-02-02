@@ -1,7 +1,7 @@
 import { D1Client, TradeJournalRow } from "../client";
 import { generateId, nowISO } from "../../../lib/utils";
 
-export interface CreateJournalEntryParams {
+interface CreateJournalEntryParams {
   trade_id?: string;
   symbol: string;
   side: string;
@@ -46,7 +46,7 @@ export async function createJournalEntry(
   return id;
 }
 
-export interface LogOutcomeParams {
+interface LogOutcomeParams {
   journal_id: string;
   exit_price: number;
   exit_at?: string;
@@ -78,16 +78,6 @@ export async function logOutcome(
       now,
       params.journal_id,
     ]
-  );
-}
-
-export async function getJournalEntry(
-  db: D1Client,
-  id: string
-): Promise<TradeJournalRow | null> {
-  return db.executeOne<TradeJournalRow>(
-    `SELECT * FROM trade_journal WHERE id = ?`,
-    [id]
   );
 }
 
@@ -197,7 +187,7 @@ export async function getJournalStats(
   };
 }
 
-export interface MemoryRuleRow {
+interface MemoryRuleRow {
   id: string;
   rule_type: string;
   description: string;
@@ -206,35 +196,6 @@ export interface MemoryRuleRow {
   source: string;
   active: number;
   created_at: string;
-}
-
-export async function createMemoryRule(
-  db: D1Client,
-  params: {
-    rule_type: string;
-    description: string;
-    conditions?: Record<string, unknown>;
-    confidence?: number;
-    source: string;
-  }
-): Promise<string> {
-  const id = generateId();
-
-  await db.run(
-    `INSERT INTO memory_rules (id, rule_type, description, conditions_json, confidence, source, active, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
-    [
-      id,
-      params.rule_type,
-      params.description,
-      params.conditions ? JSON.stringify(params.conditions) : null,
-      params.confidence ?? null,
-      params.source,
-      nowISO(),
-    ]
-  );
-
-  return id;
 }
 
 export async function getActiveRules(db: D1Client): Promise<MemoryRuleRow[]> {

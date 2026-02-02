@@ -2,7 +2,7 @@ import { D1Client, OrderApprovalRow } from "../client";
 import { generateId, nowISO } from "../../../lib/utils";
 import type { OrderPreview, PolicyResult } from "../../../mcp/types";
 
-export interface CreateApprovalParams {
+interface CreateApprovalParams {
   preview: OrderPreview;
   policyResult: PolicyResult;
   previewHash: string;
@@ -61,12 +61,4 @@ export async function cleanupExpiredApprovals(db: D1Client): Promise<number> {
   return result.meta.changes ?? 0;
 }
 
-export async function getRecentApprovals(
-  db: D1Client,
-  limit: number = 20
-): Promise<OrderApprovalRow[]> {
-  return db.execute<OrderApprovalRow>(
-    `SELECT * FROM order_approvals ORDER BY created_at DESC LIMIT ?`,
-    [limit]
-  );
-}
+

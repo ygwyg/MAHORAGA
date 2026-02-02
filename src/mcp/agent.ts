@@ -42,7 +42,7 @@ import type { OptionsOrderPreview } from "./types";
 export class MahoragaMcpAgent extends McpAgent<Env> {
   server = new McpServer({
     name: "mahoraga",
-    version: "0.1.0",
+    version: "0.3.0",
   });
 
   private requestId: string = "";
@@ -77,7 +77,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
     this.registerEventsTools(db);
     this.registerNewsTools(db);
     this.registerResearchTools(db, alpaca);
-    this.registerOptionsTools();
+    this.registerOptionsTools(db, alpaca);
     this.registerUtilityTools();
   }
 
@@ -324,7 +324,10 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
             try {
               const quote = await alpaca.marketData.getQuote(input.symbol);
               estimatedPrice = input.side === "buy" ? quote.ask_price : quote.bid_price;
-            } catch { estimatedPrice = 0; }
+            } catch (err) {
+              console.error(`[MCP] Failed to fetch quote for ${input.symbol}:`, err);
+              estimatedPrice = 0;
+            }
           }
 
           const estimatedCost = input.notional ?? (input.qty ?? 0) * estimatedPrice;
@@ -956,7 +959,8 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
                 const signals = detectSignals(technicals);
                 results.push({ symbol: sym.toUpperCase(), technicals, signals });
               }
-            } catch {
+            } catch (err) {
+              console.error(`[MCP] Failed to compute technicals for ${sym}:`, err);
               continue;
             }
           }
@@ -1169,7 +1173,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
     );
   }
 
-  private registerOptionsTools() {
+  private registerOptionsTools(db: ReturnType<typeof createD1Client>, alpaca: ReturnType<typeof createAlpacaProviders>) {
     this.server.tool(
       "options-expirations",
       "Get available option expiration dates for a symbol",
@@ -1237,9 +1241,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
       },
       async (input) => {
         const startTime = Date.now();
-        const db = createD1Client(this.env.DB);
-        const alpaca = createAlpacaProviders(this.env);
-        
+
         if (!this.options || !this.options.isConfigured()) {
           return { content: [{ type: "text" as const, text: JSON.stringify(failure({ code: ErrorCode.NOT_SUPPORTED, message: "Options provider not configured" }), null, 2) }], isError: true };
         }
@@ -1335,8 +1337,6 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
       { approval_token: z.string().min(1) },
       async ({ approval_token }) => {
         const startTime = Date.now();
-        const db = createD1Client(this.env.DB);
-        const alpaca = createAlpacaProviders(this.env);
 
         try {
           const riskState = await getRiskState(db);

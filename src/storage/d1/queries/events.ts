@@ -1,15 +1,6 @@
 import { D1Client, StructuredEventRow } from "../client";
 import { generateId, nowISO } from "../../../lib/utils";
 
-export interface RawEventRow {
-  id: string;
-  source: string;
-  source_id: string;
-  raw_content: string;
-  r2_key: string | null;
-  ingested_at: string;
-}
-
 export async function insertRawEvent(
   db: D1Client,
   params: {
@@ -37,16 +28,6 @@ export async function insertRawEvent(
   return id;
 }
 
-export async function getRawEvent(
-  db: D1Client,
-  id: string
-): Promise<RawEventRow | null> {
-  return db.executeOne<RawEventRow>(
-    `SELECT * FROM raw_events WHERE id = ?`,
-    [id]
-  );
-}
-
 export async function rawEventExists(
   db: D1Client,
   source: string,
@@ -57,25 +38,6 @@ export async function rawEventExists(
     [source, sourceId]
   );
   return (row?.cnt ?? 0) > 0;
-}
-
-export async function getRecentRawEvents(
-  db: D1Client,
-  params: { source?: string; limit?: number } = {}
-): Promise<RawEventRow[]> {
-  const { source, limit = 100 } = params;
-
-  if (source) {
-    return db.execute<RawEventRow>(
-      `SELECT * FROM raw_events WHERE source = ? ORDER BY ingested_at DESC LIMIT ?`,
-      [source, limit]
-    );
-  }
-
-  return db.execute<RawEventRow>(
-    `SELECT * FROM raw_events ORDER BY ingested_at DESC LIMIT ?`,
-    [limit]
-  );
 }
 
 export async function insertStructuredEvent(
@@ -109,16 +71,6 @@ export async function insertStructuredEvent(
   );
 
   return id;
-}
-
-export async function getStructuredEvent(
-  db: D1Client,
-  id: string
-): Promise<StructuredEventRow | null> {
-  return db.executeOne<StructuredEventRow>(
-    `SELECT * FROM structured_events WHERE id = ?`,
-    [id]
-  );
 }
 
 export async function queryStructuredEvents(
@@ -157,30 +109,7 @@ export async function queryStructuredEvents(
   );
 }
 
-export async function markEventValidated(
-  db: D1Client,
-  eventId: string,
-  validated: boolean,
-  errors?: string[]
-): Promise<void> {
-  await db.run(
-    `UPDATE structured_events SET validated = ?, validation_errors = ? WHERE id = ?`,
-    [validated ? 1 : 0, errors ? JSON.stringify(errors) : null, eventId]
-  );
-}
-
-export async function linkEventToTrade(
-  db: D1Client,
-  eventId: string,
-  tradeId: string
-): Promise<void> {
-  await db.run(
-    `UPDATE structured_events SET trade_id = ? WHERE id = ?`,
-    [tradeId, eventId]
-  );
-}
-
-export interface NewsItemRow {
+interface NewsItemRow {
   id: string;
   source: string;
   source_id: string;
@@ -259,29 +188,4 @@ export async function queryNewsItems(
   );
 }
 
-export interface EventSourceRow {
-  id: string;
-  name: string;
-  provider: string;
-  config_json: string;
-  active: number;
-  last_poll_at: string | null;
-  poll_interval_mins: number;
-  created_at: string;
-}
 
-export async function getActiveEventSources(db: D1Client): Promise<EventSourceRow[]> {
-  return db.execute<EventSourceRow>(
-    `SELECT * FROM event_sources WHERE active = 1`
-  );
-}
-
-export async function updateEventSourcePollTime(
-  db: D1Client,
-  sourceId: string
-): Promise<void> {
-  await db.run(
-    `UPDATE event_sources SET last_poll_at = ? WHERE id = ?`,
-    [nowISO(), sourceId]
-  );
-}

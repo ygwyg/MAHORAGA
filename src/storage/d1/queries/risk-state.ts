@@ -60,27 +60,6 @@ export async function disableKillSwitch(db: D1Client): Promise<void> {
   );
 }
 
-export async function recordDailyLoss(
-  db: D1Client,
-  lossUsd: number
-): Promise<void> {
-  const now = nowISO();
-  await db.run(
-    `UPDATE risk_state SET daily_loss_usd = daily_loss_usd + ?, last_loss_at = ?, updated_at = ? WHERE id = 1`,
-    [lossUsd, now, now]
-  );
-}
-
-export async function setCooldown(
-  db: D1Client,
-  cooldownUntil: string
-): Promise<void> {
-  await db.run(
-    `UPDATE risk_state SET cooldown_until = ?, updated_at = ? WHERE id = 1`,
-    [cooldownUntil, nowISO()]
-  );
-}
-
 export async function resetDailyLoss(db: D1Client): Promise<void> {
   const now = nowISO();
   await db.run(

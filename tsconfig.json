@@ -18,11 +18,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": false,
-    "noUncheckedIndexedAccess": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "baseUrl": "."
+    "noUncheckedIndexedAccess": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

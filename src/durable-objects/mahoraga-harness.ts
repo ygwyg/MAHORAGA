@@ -31,7 +31,7 @@
  *    - Set DISCORD_WEBHOOK_URL secret to enable
  *    - Modify what triggers notifications
  * 
- * Deploy with: wrangler deploy -c wrangler.v2.toml
+ * Deploy with: wrangler deploy
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -40,6 +40,8 @@ import OpenAI from "openai";
 import type { Env } from "../env.d";
 import { createAlpacaProviders } from "../providers/alpaca";
 import type { Account, Position, MarketClock } from "../providers/types";
+import { sleep } from "../lib/utils";
+import { isAuthorized } from "../lib/auth";
 
 // ============================================================================
 // SECTION 1: TYPES & CONFIGURATION
@@ -525,7 +527,25 @@ export class MahoragaHarness extends DurableObject<Env> {
       }
       
       const positions = await alpaca.trading.getPositions();
-      
+
+      // Backfill position entries for positions that exist on Alpaca but have no
+      // local tracking (e.g., after state flush, manual trades, or migrations).
+      for (const pos of positions) {
+        if (!this.state.positionEntries[pos.symbol]) {
+          this.state.positionEntries[pos.symbol] = {
+            symbol: pos.symbol,
+            entry_time: Date.now(),
+            entry_price: pos.avg_entry_price,
+            entry_sentiment: 0,
+            entry_social_volume: 0,
+            entry_sources: ["backfill"],
+            entry_reason: "Position existed before tracking started",
+            peak_price: pos.current_price,
+            peak_sentiment: 0,
+          };
+        }
+      }
+
       if (this.state.config.crypto_enabled) {
         await this.runCryptoTrading(alpaca, positions);
       }
@@ -589,38 +609,18 @@ export class MahoragaHarness extends DurableObject<Env> {
   // Example: /webhook for external alerts, /backtest for simulation
   // ============================================================================
 
-  private constantTimeCompare(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
-    let mismatch = 0;
-    for (let i = 0; i < a.length; i++) {
-      mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-    }
-    return mismatch === 0;
-  }
 
-  private isAuthorized(request: Request): boolean {
-    const token = this.env.MAHORAGA_API_TOKEN;
-    if (!token) {
+  private isApiAuthorized(request: Request): boolean {
+    if (!this.env.MAHORAGA_API_TOKEN) {
       console.warn("[MahoragaHarness] MAHORAGA_API_TOKEN not set - denying request");
       return false;
     }
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return false;
-    }
-    return this.constantTimeCompare(authHeader.slice(7), token);
+    return isAuthorized(request, this.env.MAHORAGA_API_TOKEN);
   }
 
   private isKillSwitchAuthorized(request: Request): boolean {
-    const secret = this.env.KILL_SWITCH_SECRET;
-    if (!secret) {
-      return false;
-    }
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return false;
-    }
-    return this.constantTimeCompare(authHeader.slice(7), secret);
+    if (!this.env.KILL_SWITCH_SECRET) return false;
+    return isAuthorized(request, this.env.KILL_SWITCH_SECRET);
   }
 
   private unauthorizedResponse(): Response {
@@ -636,7 +636,7 @@ export class MahoragaHarness extends DurableObject<Env> {
 
     const protectedActions = ["enable", "disable", "config", "trigger", "status", "logs", "costs", "signals", "setup/status"];
     if (protectedActions.includes(action)) {
-      if (!this.isAuthorized(request)) {
+      if (!this.isApiAuthorized(request)) {
         return this.unauthorizedResponse();
       }
     }
@@ -869,7 +869,7 @@ export class MahoragaHarness extends DurableObject<Env> {
             });
           }
           
-          await this.sleep(200);
+          await sleep(200);
         } catch (error) {
           this.log("StockTwits", "symbol_error", { symbol: sym.symbol, message: String(error) });
           continue;
@@ -956,7 +956,7 @@ export class MahoragaHarness extends DurableObject<Env> {
           }
         }
         
-        await this.sleep(1000);
+        await sleep(1000);
       } catch (error) {
         this.log("Reddit", "subreddit_error", { subreddit: sub, message: String(error) });
         continue;
@@ -1038,7 +1038,7 @@ export class MahoragaHarness extends DurableObject<Env> {
           price,
         });
         
-        await this.sleep(200);
+        await sleep(200);
       } catch (error) {
         this.log("Crypto", "error", { symbol, message: String(error) });
       }
@@ -1655,7 +1655,7 @@ JSON response:
       if (analysis) {
         results.push(analysis);
       }
-      await this.sleep(500);
+      await sleep(500);
     }
 
     return results;
@@ -2538,7 +2538,7 @@ Response format:
     console.log(`[${entry.timestamp}] [${agent}] ${action}`, JSON.stringify(details));
   }
 
-  public trackLLMCost(model: string, tokensIn: number, tokensOut: number): number {
+  private trackLLMCost(model: string, tokensIn: number, tokensOut: number): number {
     const pricing: Record<string, { input: number; output: number }> = {
       "gpt-4o": { input: 2.5, output: 10 },
       "gpt-4o-mini": { input: 0.15, output: 0.6 },
@@ -2565,9 +2565,7 @@ Response format:
     });
   }
 
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
+
 
   get openai(): OpenAI | null {
     return this._openai;
@@ -2672,20 +2670,4 @@ Response format:
 export function getHarnessStub(env: Env): DurableObjectStub {
   const id = env.MAHORAGA_HARNESS.idFromName("main");
   return env.MAHORAGA_HARNESS.get(id);
-}
-
-export async function getHarnessStatus(env: Env): Promise<unknown> {
-  const stub = getHarnessStub(env);
-  const response = await stub.fetch(new Request("http://harness/status"));
-  return response.json();
-}
-
-export async function enableHarness(env: Env): Promise<void> {
-  const stub = getHarnessStub(env);
-  await stub.fetch(new Request("http://harness/enable"));
-}
-
-export async function disableHarness(env: Env): Promise<void> {
-  const stub = getHarnessStub(env);
-  await stub.fetch(new Request("http://harness/disable"));
 }

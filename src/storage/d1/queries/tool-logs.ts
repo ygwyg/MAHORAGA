@@ -1,4 +1,4 @@
-import { D1Client, ToolLogEntry } from "../client";
+import { D1Client } from "../client";
 import { generateId, nowISO, hashObject } from "../../../lib/utils";
 
 export async function insertToolLog(
@@ -37,35 +37,4 @@ export async function insertToolLog(
   return id;
 }
 
-export async function getToolLogs(
-  db: D1Client,
-  params: {
-    tool_name?: string;
-    limit?: number;
-    offset?: number;
-  } = {}
-): Promise<ToolLogEntry[]> {
-  const { tool_name, limit = 100, offset = 0 } = params;
 
-  if (tool_name) {
-    return db.execute<ToolLogEntry>(
-      `SELECT * FROM tool_logs WHERE tool_name = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [tool_name, limit, offset]
-    );
-  }
-
-  return db.execute<ToolLogEntry>(
-    `SELECT * FROM tool_logs ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-    [limit, offset]
-  );
-}
-
-export async function getToolLogsByRequestId(
-  db: D1Client,
-  requestId: string
-): Promise<ToolLogEntry[]> {
-  return db.execute<ToolLogEntry>(
-    `SELECT * FROM tool_logs WHERE request_id = ? ORDER BY created_at ASC`,
-    [requestId]
-  );
-}

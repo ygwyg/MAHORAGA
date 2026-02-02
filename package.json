@@ -13,7 +13,6 @@
     "db:studio": "wrangler d1 execute mahoraga-db --local --command 'SELECT 1'",
     "types": "wrangler types",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/",
     "test": "vitest",
     "test:run": "vitest run",
     "setup:access": "npx tsx scripts/setup-access.ts"

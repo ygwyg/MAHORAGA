@@ -26,20 +26,19 @@ import type { OrderPreview, PolicyResult, PolicyViolation, PolicyWarning, Option
 import type { Account, Position, MarketClock } from "../providers/types";
 import type { RiskState } from "../storage/d1/queries/risk-state";
 
-export interface PolicyContext {
-  order: OrderPreview;
+interface BasePolicyContext {
   account: Account;
   positions: Position[];
   clock: MarketClock;
   riskState: RiskState;
 }
 
-export interface OptionsPolicyContext {
+export interface PolicyContext extends BasePolicyContext {
+  order: OrderPreview;
+}
+
+export interface OptionsPolicyContext extends BasePolicyContext {
   order: OptionsOrderPreview;
-  account: Account;
-  positions: Position[];
-  clock: MarketClock;
-  riskState: RiskState;
 }
 
 export class PolicyEngine {
@@ -68,7 +67,7 @@ export class PolicyEngine {
     };
   }
 
-  private checkKillSwitch(ctx: PolicyContext, violations: PolicyViolation[]): void {
+  private checkKillSwitch(ctx: BasePolicyContext, violations: PolicyViolation[]): void {
     if (ctx.riskState.kill_switch_active) {
       violations.push({
         rule: "kill_switch",
@@ -79,7 +78,7 @@ export class PolicyEngine {
     }
   }
 
-  private checkCooldown(ctx: PolicyContext, violations: PolicyViolation[]): void {
+  private checkCooldown(ctx: BasePolicyContext, violations: PolicyViolation[]): void {
     if (!ctx.riskState.cooldown_until) return;
 
     const cooldownEnd = new Date(ctx.riskState.cooldown_until);
@@ -95,7 +94,7 @@ export class PolicyEngine {
     }
   }
 
-  private checkDailyLossLimit(ctx: PolicyContext, violations: PolicyViolation[]): void {
+  private checkDailyLossLimit(ctx: BasePolicyContext, violations: PolicyViolation[]): void {
     const dailyLossPct = ctx.riskState.daily_loss_usd / ctx.account.equity;
 
     if (dailyLossPct >= this.config.max_daily_loss_pct) {
@@ -109,14 +108,15 @@ export class PolicyEngine {
   }
 
   private checkTradingHours(
-    ctx: PolicyContext,
+    ctx: BasePolicyContext,
     violations: PolicyViolation[],
     warnings: PolicyWarning[]
   ): void {
     if (!this.config.trading_hours_only) return;
 
     // Crypto trades 24/7 — skip market hours check
-    if (ctx.order.asset_class === "crypto") return;
+    const order = (ctx as PolicyContext).order;
+    if (order?.asset_class === "crypto") return;
 
     if (!ctx.clock.is_open) {
       if (!this.config.extended_hours_allowed) {
@@ -293,10 +293,10 @@ export class PolicyEngine {
     const violations: PolicyViolation[] = [];
     const warnings: PolicyWarning[] = [];
 
-    this.checkKillSwitch(ctx as unknown as PolicyContext, violations);
-    this.checkCooldown(ctx as unknown as PolicyContext, violations);
-    this.checkDailyLossLimit(ctx as unknown as PolicyContext, violations);
-    this.checkTradingHours(ctx as unknown as PolicyContext, violations, warnings);
+    this.checkKillSwitch(ctx, violations);
+    this.checkCooldown(ctx, violations);
+    this.checkDailyLossLimit(ctx, violations);
+    this.checkTradingHours(ctx, violations, warnings);
     
     this.checkOptionsEnabled(violations);
     this.checkOptionsDTE(ctx, violations);

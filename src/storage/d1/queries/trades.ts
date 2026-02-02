@@ -1,7 +1,7 @@
-import { D1Client, TradeRow } from "../client";
+import { D1Client } from "../client";
 import { generateId, nowISO } from "../../../lib/utils";
 
-export interface CreateTradeParams {
+interface CreateTradeParams {
   approval_id?: string;
   alpaca_order_id: string;
   symbol: string;
@@ -43,66 +43,4 @@ export async function createTrade(
   return id;
 }
 
-export async function updateTradeStatus(
-  db: D1Client,
-  tradeId: string,
-  status: string,
-  filledQty?: number,
-  filledAvgPrice?: number
-): Promise<void> {
-  await db.run(
-    `UPDATE trades SET status = ?, filled_qty = COALESCE(?, filled_qty), filled_avg_price = COALESCE(?, filled_avg_price), updated_at = ? WHERE id = ?`,
-    [status, filledQty ?? null, filledAvgPrice ?? null, nowISO(), tradeId]
-  );
-}
 
-export async function getTradeByAlpacaOrderId(
-  db: D1Client,
-  alpacaOrderId: string
-): Promise<TradeRow | null> {
-  return db.executeOne<TradeRow>(
-    `SELECT * FROM trades WHERE alpaca_order_id = ?`,
-    [alpacaOrderId]
-  );
-}
-
-export async function getTradeById(
-  db: D1Client,
-  tradeId: string
-): Promise<TradeRow | null> {
-  return db.executeOne<TradeRow>(
-    `SELECT * FROM trades WHERE id = ?`,
-    [tradeId]
-  );
-}
-
-export async function getRecentTrades(
-  db: D1Client,
-  params: {
-    symbol?: string;
-    limit?: number;
-    offset?: number;
-  } = {}
-): Promise<TradeRow[]> {
-  const { symbol, limit = 50, offset = 0 } = params;
-
-  if (symbol) {
-    return db.execute<TradeRow>(
-      `SELECT * FROM trades WHERE symbol = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [symbol, limit, offset]
-    );
-  }
-
-  return db.execute<TradeRow>(
-    `SELECT * FROM trades ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-    [limit, offset]
-  );
-}
-
-export async function getTradesToday(db: D1Client): Promise<TradeRow[]> {
-  const today = new Date().toISOString().split("T")[0];
-  return db.execute<TradeRow>(
-    `SELECT * FROM trades WHERE created_at >= ? ORDER BY created_at DESC`,
-    [today]
-  );
-}

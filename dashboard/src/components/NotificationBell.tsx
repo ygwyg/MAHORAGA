@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import clsx from 'clsx'
 import type { OvernightActivity, PremarketPlan } from '../types'
+import { formatTime } from '../utils/formatters'
 
 interface NotificationBellProps {
   overnightActivity?: OvernightActivity
@@ -37,14 +38,6 @@ export function NotificationBell({ overnightActivity, premarketPlan }: Notificat
     
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
-
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    })
-  }
 
   return (
     <div ref={containerRef} className="relative">

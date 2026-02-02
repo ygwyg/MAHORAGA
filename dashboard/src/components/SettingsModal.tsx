@@ -2,6 +2,29 @@ import { useState, useEffect } from 'react'
 import type { Config } from '../types'
 import { Panel } from './Panel'
 
+function ConfigInput({ label, value, onChange, step, type = 'number', disabled }: {
+  label: string
+  value: number | string
+  onChange: (v: number) => void
+  step?: string
+  type?: string
+  disabled?: boolean
+}) {
+  return (
+    <div>
+      <label className="hud-label block mb-1">{label}</label>
+      <input
+        type={type}
+        step={step}
+        className="hud-input w-full"
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        disabled={disabled}
+      />
+    </div>
+  )
+}
+
 interface SettingsModalProps {
   config: Config
   onSave: (config: Config) => void
@@ -26,7 +49,7 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
     window.location.reload()
   }
 
-  const handleChange = (key: keyof Config, value: string | number) => {
+  const handleChange = (key: keyof Config, value: string | number | boolean | string[]) => {
     setLocalConfig(prev => ({ ...prev, [key]: value }))
   }
 
@@ -76,33 +99,9 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
           <div>
             <h3 className="hud-label mb-3 text-hud-primary">Position Limits</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="hud-label block mb-1">Max Position Value ($)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.max_position_value}
-                  onChange={e => handleChange('max_position_value', Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Max Positions</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.max_positions}
-                  onChange={e => handleChange('max_positions', Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Position Size (% of Cash)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.position_size_pct_of_cash}
-                  onChange={e => handleChange('position_size_pct_of_cash', Number(e.target.value))}
-                />
-              </div>
+              <ConfigInput label="Max Position Value ($)" value={localConfig.max_position_value} onChange={v => handleChange('max_position_value', v)} />
+              <ConfigInput label="Max Positions" value={localConfig.max_positions} onChange={v => handleChange('max_positions', v)} />
+              <ConfigInput label="Position Size (% of Cash)" value={localConfig.position_size_pct_of_cash} onChange={v => handleChange('position_size_pct_of_cash', v)} />
             </div>
           </div>
 
@@ -110,36 +109,9 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
           <div>
             <h3 className="hud-label mb-3 text-hud-primary">Sentiment Thresholds</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="hud-label block mb-1">Min Sentiment to Buy (0-1)</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  className="hud-input w-full"
-                  value={localConfig.min_sentiment_score}
-                  onChange={e => handleChange('min_sentiment_score', Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Min Analyst Confidence (0-1)</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  className="hud-input w-full"
-                  value={localConfig.min_analyst_confidence}
-                  onChange={e => handleChange('min_analyst_confidence', Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Sell Sentiment Threshold</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  className="hud-input w-full"
-                  value={localConfig.sell_sentiment_threshold}
-                  onChange={e => handleChange('sell_sentiment_threshold', Number(e.target.value))}
-                />
-              </div>
+              <ConfigInput label="Min Sentiment to Buy (0-1)" value={localConfig.min_sentiment_score} onChange={v => handleChange('min_sentiment_score', v)} step="0.05" />
+              <ConfigInput label="Min Analyst Confidence (0-1)" value={localConfig.min_analyst_confidence} onChange={v => handleChange('min_analyst_confidence', v)} step="0.05" />
+              <ConfigInput label="Sell Sentiment Threshold" value={localConfig.sell_sentiment_threshold} onChange={v => handleChange('sell_sentiment_threshold', v)} step="0.05" />
             </div>
           </div>
 
@@ -147,24 +119,8 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
           <div>
             <h3 className="hud-label mb-3 text-hud-primary">Risk Management</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="hud-label block mb-1">Take Profit (%)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.take_profit_pct}
-                  onChange={e => handleChange('take_profit_pct', Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Stop Loss (%)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.stop_loss_pct}
-                  onChange={e => handleChange('stop_loss_pct', Number(e.target.value))}
-                />
-              </div>
+              <ConfigInput label="Take Profit (%)" value={localConfig.take_profit_pct} onChange={v => handleChange('take_profit_pct', v)} />
+              <ConfigInput label="Stop Loss (%)" value={localConfig.stop_loss_pct} onChange={v => handleChange('stop_loss_pct', v)} />
             </div>
           </div>
 
@@ -172,26 +128,8 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
           <div>
             <h3 className="hud-label mb-3 text-hud-primary">Polling Intervals</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="hud-label block mb-1">Data Poll (ms)</label>
-                <input
-                  type="number"
-                  step="1000"
-                  className="hud-input w-full"
-                  value={localConfig.data_poll_interval_ms}
-                  onChange={e => handleChange('data_poll_interval_ms', Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Analyst Interval (ms)</label>
-                <input
-                  type="number"
-                  step="1000"
-                  className="hud-input w-full"
-                  value={localConfig.analyst_interval_ms}
-                  onChange={e => handleChange('analyst_interval_ms', Number(e.target.value))}
-                />
-              </div>
+              <ConfigInput label="Data Poll (ms)" value={localConfig.data_poll_interval_ms} onChange={v => handleChange('data_poll_interval_ms', v)} step="1000" />
+              <ConfigInput label="Analyst Interval (ms)" value={localConfig.analyst_interval_ms} onChange={v => handleChange('analyst_interval_ms', v)} step="1000" />
             </div>
           </div>
 
@@ -207,7 +145,6 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                   onChange={e => handleChange('llm_model', e.target.value)}
                 >
                   <option value="gpt-4o-mini">gpt-4o-mini</option>
-                  <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                 </select>
               </div>
               <div>
@@ -230,13 +167,7 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
             <h3 className="hud-label mb-3 text-hud-primary">Account</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="hud-label block mb-1">Starting Equity ($)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.starting_equity || 100000}
-                  onChange={e => handleChange('starting_equity', Number(e.target.value))}
-                />
+                <ConfigInput label="Starting Equity ($)" value={localConfig.starting_equity || 100000} onChange={v => handleChange('starting_equity', v)} />
                 <p className="text-xs text-hud-text-dim mt-1">For P&L calculation</p>
               </div>
             </div>
@@ -252,94 +183,19 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                     type="checkbox"
                     className="hud-input w-4 h-4"
                     checked={localConfig.options_enabled || false}
-                    onChange={e => handleChange('options_enabled', e.target.checked ? 1 : 0)}
+                    onChange={e => handleChange('options_enabled', e.target.checked)}
                   />
                   <span className="hud-label">Enable Options Trading</span>
                 </label>
               </div>
-              <div>
-                <label className="hud-label block mb-1">Min Confidence (0-1)</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  className="hud-input w-full"
-                  value={localConfig.options_min_confidence || 0.75}
-                  onChange={e => handleChange('options_min_confidence', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Max % Per Trade</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  className="hud-input w-full"
-                  value={localConfig.options_max_pct_per_trade || 2}
-                  onChange={e => handleChange('options_max_pct_per_trade', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Min DTE (days)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.options_min_dte || 7}
-                  onChange={e => handleChange('options_min_dte', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Max DTE (days)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.options_max_dte || 45}
-                  onChange={e => handleChange('options_max_dte', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Target Delta</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  className="hud-input w-full"
-                  value={localConfig.options_target_delta || 0.35}
-                  onChange={e => handleChange('options_target_delta', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Max Positions</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.options_max_positions || 3}
-                  onChange={e => handleChange('options_max_positions', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Stop Loss (%)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.options_stop_loss_pct || 50}
-                  onChange={e => handleChange('options_stop_loss_pct', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Take Profit (%)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.options_take_profit_pct || 100}
-                  onChange={e => handleChange('options_take_profit_pct', Number(e.target.value))}
-                  disabled={!localConfig.options_enabled}
-                />
-              </div>
+              <ConfigInput label="Min Confidence (0-1)" value={localConfig.options_min_confidence || 0.75} onChange={v => handleChange('options_min_confidence', v)} step="0.05" disabled={!localConfig.options_enabled} />
+              <ConfigInput label="Max % Per Trade" value={localConfig.options_max_pct_per_trade || 2} onChange={v => handleChange('options_max_pct_per_trade', v)} step="0.5" disabled={!localConfig.options_enabled} />
+              <ConfigInput label="Min DTE (days)" value={localConfig.options_min_dte || 7} onChange={v => handleChange('options_min_dte', v)} disabled={!localConfig.options_enabled} />
+              <ConfigInput label="Max DTE (days)" value={localConfig.options_max_dte || 45} onChange={v => handleChange('options_max_dte', v)} disabled={!localConfig.options_enabled} />
+              <ConfigInput label="Target Delta" value={localConfig.options_target_delta || 0.35} onChange={v => handleChange('options_target_delta', v)} step="0.05" disabled={!localConfig.options_enabled} />
+              <ConfigInput label="Max Positions" value={localConfig.options_max_positions || 3} onChange={v => handleChange('options_max_positions', v)} disabled={!localConfig.options_enabled} />
+              <ConfigInput label="Stop Loss (%)" value={localConfig.options_stop_loss_pct || 50} onChange={v => handleChange('options_stop_loss_pct', v)} disabled={!localConfig.options_enabled} />
+              <ConfigInput label="Take Profit (%)" value={localConfig.options_take_profit_pct || 100} onChange={v => handleChange('options_take_profit_pct', v)} disabled={!localConfig.options_enabled} />
             </div>
           </div>
 
@@ -353,7 +209,7 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                     type="checkbox"
                     className="hud-input w-4 h-4"
                     checked={localConfig.crypto_enabled || false}
-                    onChange={e => handleChange('crypto_enabled', e.target.checked ? 1 : 0)}
+                    onChange={e => handleChange('crypto_enabled', e.target.checked)}
                   />
                   <span className="hud-label">Enable Crypto Trading</span>
                 </label>
@@ -365,52 +221,15 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                   type="text"
                   className="hud-input w-full"
                   value={(localConfig.crypto_symbols || ['BTC/USD', 'ETH/USD', 'SOL/USD']).join(', ')}
-                  onChange={e => handleChange('crypto_symbols', e.target.value.split(',').map(s => s.trim()) as unknown as string)}
+                  onChange={e => handleChange('crypto_symbols', e.target.value.split(',').map(s => s.trim()))}
                   disabled={!localConfig.crypto_enabled}
                   placeholder="BTC/USD, ETH/USD, SOL/USD, DOGE/USD, AVAX/USD..."
                 />
               </div>
-              <div>
-                <label className="hud-label block mb-1">Momentum Threshold (%)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  className="hud-input w-full"
-                  value={localConfig.crypto_momentum_threshold || 2.0}
-                  onChange={e => handleChange('crypto_momentum_threshold', Number(e.target.value))}
-                  disabled={!localConfig.crypto_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Max Position ($)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.crypto_max_position_value || 1000}
-                  onChange={e => handleChange('crypto_max_position_value', Number(e.target.value))}
-                  disabled={!localConfig.crypto_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Take Profit (%)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.crypto_take_profit_pct || 10}
-                  onChange={e => handleChange('crypto_take_profit_pct', Number(e.target.value))}
-                  disabled={!localConfig.crypto_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Stop Loss (%)</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.crypto_stop_loss_pct || 5}
-                  onChange={e => handleChange('crypto_stop_loss_pct', Number(e.target.value))}
-                  disabled={!localConfig.crypto_enabled}
-                />
-              </div>
+              <ConfigInput label="Momentum Threshold (%)" value={localConfig.crypto_momentum_threshold || 2.0} onChange={v => handleChange('crypto_momentum_threshold', v)} step="0.5" disabled={!localConfig.crypto_enabled} />
+              <ConfigInput label="Max Position ($)" value={localConfig.crypto_max_position_value || 1000} onChange={v => handleChange('crypto_max_position_value', v)} disabled={!localConfig.crypto_enabled} />
+              <ConfigInput label="Take Profit (%)" value={localConfig.crypto_take_profit_pct || 10} onChange={v => handleChange('crypto_take_profit_pct', v)} disabled={!localConfig.crypto_enabled} />
+              <ConfigInput label="Stop Loss (%)" value={localConfig.crypto_stop_loss_pct || 5} onChange={v => handleChange('crypto_stop_loss_pct', v)} disabled={!localConfig.crypto_enabled} />
             </div>
           </div>
 
@@ -424,53 +243,19 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                     type="checkbox"
                     className="hud-input w-4 h-4"
                     checked={localConfig.stale_position_enabled ?? true}
-                    onChange={e => handleChange('stale_position_enabled', e.target.checked ? 1 : 0)}
+                    onChange={e => handleChange('stale_position_enabled', e.target.checked)}
                   />
                   <span className="hud-label">Enable Stale Position Detection</span>
                 </label>
               </div>
+              <ConfigInput label="Max Hold Days" value={localConfig.stale_max_hold_days || 3} onChange={v => handleChange('stale_max_hold_days', v)} disabled={!localConfig.stale_position_enabled} />
+              <ConfigInput label="Min Gain % to Keep" value={localConfig.stale_min_gain_pct || 5} onChange={v => handleChange('stale_min_gain_pct', v)} step="0.5" disabled={!localConfig.stale_position_enabled} />
               <div>
-                <label className="hud-label block mb-1">Max Hold Days</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.stale_max_hold_days || 3}
-                  onChange={e => handleChange('stale_max_hold_days', Number(e.target.value))}
-                  disabled={!localConfig.stale_position_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Min Gain % to Keep</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  className="hud-input w-full"
-                  value={localConfig.stale_min_gain_pct || 5}
-                  onChange={e => handleChange('stale_min_gain_pct', Number(e.target.value))}
-                  disabled={!localConfig.stale_position_enabled}
-                />
-              </div>
-              <div>
-                <label className="hud-label block mb-1">Social Volume Decay</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="hud-input w-full"
-                  value={localConfig.stale_social_volume_decay || 0.3}
-                  onChange={e => handleChange('stale_social_volume_decay', Number(e.target.value))}
-                  disabled={!localConfig.stale_position_enabled}
-                />
+                <ConfigInput label="Social Volume Decay" value={localConfig.stale_social_volume_decay || 0.3} onChange={v => handleChange('stale_social_volume_decay', v)} step="0.1" disabled={!localConfig.stale_position_enabled} />
                 <p className="text-[9px] text-hud-text-dim mt-1">Exit if volume drops to this % of entry</p>
               </div>
               <div>
-                <label className="hud-label block mb-1">No Mentions Hours</label>
-                <input
-                  type="number"
-                  className="hud-input w-full"
-                  value={localConfig.stale_no_mentions_hours || 8}
-                  onChange={e => handleChange('stale_no_mentions_hours', Number(e.target.value))}
-                  disabled={!localConfig.stale_position_enabled}
-                />
+                <ConfigInput label="No Mentions Hours" value={localConfig.stale_no_mentions_hours || 8} onChange={v => handleChange('stale_no_mentions_hours', v)} disabled={!localConfig.stale_position_enabled} />
                 <p className="text-[9px] text-hud-text-dim mt-1">Exit if no mentions for N hours</p>
               </div>
             </div>
