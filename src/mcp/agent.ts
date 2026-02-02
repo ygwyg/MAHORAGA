@@ -625,8 +625,8 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
         qty: z.number().positive(),
         entry_price: z.number().positive().optional(),
         trade_id: z.string().optional(),
-        signals: z.record(z.number()).optional(),
-        technicals: z.record(z.union([z.number(), z.null()])).optional(),
+        signals: z.record(z.string(), z.number()).optional(),
+        technicals: z.record(z.string(), z.union([z.number(), z.null()])).optional(),
         regime_tags: z.array(z.string()).optional(),
         notes: z.string().optional(),
       },
@@ -734,7 +734,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
     this.server.tool(
       "memory-set-preferences",
       "Store user trading preferences",
-      { preferences: z.record(z.union([z.string(), z.number(), z.boolean()])) },
+      { preferences: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])) },
       async ({ preferences }) => {
         try {
           await setPreferences(db, preferences);
