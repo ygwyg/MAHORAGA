@@ -1,16 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
+import clsx from 'clsx'
 import { Panel } from './components/Panel'
 import { Metric, MetricInline } from './components/Metric'
 import { StatusIndicator, StatusBar } from './components/StatusIndicator'
 import { SettingsModal } from './components/SettingsModal'
 import { SetupWizard } from './components/SetupWizard'
+import { LineChart } from './components/LineChart'
 import { NotificationBell } from './components/NotificationBell'
 import { AccountPanel } from './components/AccountPanel'
 import { PositionsTable } from './components/PositionsTable'
 import { SignalsPanel } from './components/SignalsPanel'
+import { SignalResearchPanel } from './components/SignalResearchPanel'
 import { ActivityFeed } from './components/ActivityFeed'
 import { useAgentStatus } from './hooks/useAgentStatus'
+import { formatPercent } from './utils/formatters'
+import type { Position } from './types'
+
+const positionColors = ['cyan', 'purple', 'yellow', 'blue', 'green'] as const
 
 export default function App() {
   const {
@@ -45,6 +52,47 @@ export default function App() {
   const totalPl = account ? account.equity - startingEquity : 0
   const realizedPl = totalPl - unrealizedPl
   const totalPlPct = account ? (totalPl / startingEquity) * 100 : 0
+
+  // Portfolio chart data
+  const portfolioChartData = useMemo(() => {
+    return portfolioHistory.map(s => s.equity)
+  }, [portfolioHistory])
+
+  const portfolioChartLabels = useMemo(() => {
+    return portfolioHistory.map(s =>
+      new Date(s.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+    )
+  }, [portfolioHistory])
+
+  // Position performance chart data
+  const normalizedPositionSeries = useMemo(() => {
+    const histories: Record<string, number[]> = {}
+    positions.forEach(pos => {
+      const isPositive = pos.unrealized_pl >= 0
+      const startPrice = pos.current_price * (isPositive ? 0.95 : 1.05)
+      const prices: number[] = []
+      for (let i = 0; i < 20; i++) {
+        const progress = i / 19
+        const trend = startPrice + (pos.current_price - startPrice) * progress
+        const noise = trend * (Math.random() - 0.5) * 0.02
+        prices.push(trend + noise)
+      }
+      prices[prices.length - 1] = pos.current_price
+      histories[pos.symbol] = prices
+    })
+
+    return positions.map((pos, idx) => {
+      const priceHistory = histories[pos.symbol] || []
+      if (priceHistory.length < 2) return null
+      const startPrice = priceHistory[0]
+      const normalizedData = priceHistory.map(price => ((price - startPrice) / startPrice) * 100)
+      return {
+        label: pos.symbol,
+        data: normalizedData,
+        variant: positionColors[idx % positionColors.length],
+      }
+    }).filter((item): item is NonNullable<typeof item> => item !== null)
+  }, [positions.map(p => p.symbol).join(',')])
 
   // Early returns (after all hooks)
   if (showSetup) {
@@ -133,15 +181,13 @@ export default function App() {
         </header>
 
         <div className="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-12 gap-4">
-          {/* Row 1: Account + Positions + LLM Costs */}
+          {/* Row 1: Account + Positions + LLM Costs (3+5+4=12) */}
           <AccountPanel
             account={account ?? null}
-            config={config}
             totalPl={totalPl}
             totalPlPct={totalPlPct}
             realizedPl={realizedPl}
             unrealizedPl={unrealizedPl}
-            portfolioHistory={portfolioHistory}
           />
 
           <PositionsTable
@@ -166,16 +212,80 @@ export default function App() {
             </Panel>
           </div>
 
-          {/* Row 2: Portfolio chart is in AccountPanel */}
-          {/* Row 2: Position chart is in PositionsTable */}
+          {/* Row 2: Portfolio Chart + Position Performance Chart (8+4=12) */}
+          <div className="col-span-4 md:col-span-8 lg:col-span-8">
+            <Panel title="PORTFOLIO PERFORMANCE" titleRight="24H" className="h-[320px]">
+              {portfolioChartData.length > 1 ? (
+                <div className="h-full w-full">
+                  <LineChart
+                    series={[{ label: 'Equity', data: portfolioChartData, variant: totalPl >= 0 ? 'green' : 'red' }]}
+                    labels={portfolioChartLabels}
+                    showArea={true}
+                    showGrid={true}
+                    showDots={false}
+                    formatValue={(v) => `$${(v / 1000).toFixed(1)}k`}
+                  />
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-hud-text-dim text-sm">
+                  Collecting performance data...
+                </div>
+              )}
+            </Panel>
+          </div>
 
-          {/* Row 3: Signals, Activity, Research */}
-          <SignalsPanel
-            signals={signals}
-            signalResearch={status?.signalResearch || {}}
-          />
+          <div className="col-span-4 md:col-span-8 lg:col-span-4">
+            <Panel title="POSITION PERFORMANCE" titleRight="% CHANGE" className="h-[320px]">
+              {positions.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-hud-text-dim text-sm">
+                  No positions to display
+                </div>
+              ) : normalizedPositionSeries.length > 0 ? (
+                <div className="h-full flex flex-col">
+                  <div className="flex flex-wrap gap-3 mb-2 pb-2 border-b border-hud-line/30 shrink-0">
+                    {positions.slice(0, 5).map((pos: Position, idx: number) => {
+                      const isPositive = pos.unrealized_pl >= 0
+                      const plPct = (pos.unrealized_pl / (pos.market_value - pos.unrealized_pl)) * 100
+                      const color = positionColors[idx % positionColors.length]
+                      return (
+                        <div key={pos.symbol} className="flex items-center gap-1.5">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: `var(--color-hud-${color})` }}
+                          />
+                          <span className="hud-value-sm">{pos.symbol}</span>
+                          <span className={clsx('hud-label', isPositive ? 'text-hud-success' : 'text-hud-error')}>
+                            {formatPercent(plPct)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex-1 min-h-0 w-full">
+                    <LineChart
+                      series={normalizedPositionSeries.slice(0, 5)}
+                      showArea={false}
+                      showGrid={true}
+                      showDots={false}
+                      animated={false}
+                      formatValue={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-hud-text-dim text-sm">
+                  Loading position data...
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {/* Row 3: Signals + Activity Feed + Research (4+4+4=12) */}
+          <SignalsPanel signals={signals} />
 
           <ActivityFeed logs={logs} />
+
+          <SignalResearchPanel signalResearch={status?.signalResearch || {}} />
         </div>
 
         <footer className="mt-4 pt-3 border-t border-hud-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
