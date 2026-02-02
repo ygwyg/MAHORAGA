@@ -329,6 +329,47 @@ const TICKER_BLACKLIST = new Set([
 // ============================================================================
 
 /**
+ * Normalize crypto symbols to Alpaca's preferred format (e.g., SOLUSD → SOL/USD)
+ * Handles both legacy format (BTCUSD) and new format (BTC/USD)
+ */
+function normalizeCryptoSymbol(symbol: string): string {
+  // Already in correct format
+  if (symbol.includes("/")) {
+    return symbol.toUpperCase();
+  }
+  
+  // Legacy format: BTCUSD, ETHUSD, SOLUSD → BTC/USD, ETH/USD, SOL/USD
+  const match = symbol.toUpperCase().match(/^([A-Z]{2,5})(USD|USDT|USDC)$/);
+  if (match) {
+    return `${match[1]}/${match[2]}`;
+  }
+  
+  return symbol;
+}
+
+/**
+ * Check if a symbol is crypto by comparing against config.crypto_symbols
+ * Uses normalized comparison to handle both SOLUSD and SOL/USD formats
+ */
+function isCryptoSymbol(symbol: string, cryptoSymbols: string[]): boolean {
+  const normalizedInput = normalizeCryptoSymbol(symbol);
+  
+  for (const configSymbol of cryptoSymbols) {
+    const normalizedConfig = normalizeCryptoSymbol(configSymbol);
+    if (normalizedInput === normalizedConfig) {
+      return true;
+    }
+  }
+  
+  // Also check if it matches common crypto patterns (ends in /USD, /USDT, /USDC)
+  if (/^[A-Z]{2,5}\/(USD|USDT|USDC)$/.test(normalizedInput)) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * [TUNE] Time decay - how quickly old posts lose weight
  * Uses exponential decay with half-life from SOURCE_CONFIG.decayHalfLifeMinutes
  * Modify the min/max clamp values (0.2-1.0) to change bounds
@@ -992,8 +1033,9 @@ export class MahoragaHarness extends DurableObject<Env> {
   ): Promise<void> {
     if (!this.state.config.crypto_enabled) return;
     
-    const cryptoSymbols = new Set(this.state.config.crypto_symbols || []);
-    const cryptoPositions = positions.filter(p => cryptoSymbols.has(p.symbol) || p.symbol.includes("/"));
+    const configCryptoSymbols = this.state.config.crypto_symbols || [];
+    // Use proper crypto detection that handles both legacy (SOLUSD) and new (SOL/USD) formats
+    const cryptoPositions = positions.filter(p => isCryptoSymbol(p.symbol, configCryptoSymbols));
     const heldCrypto = new Set(cryptoPositions.map(p => p.symbol));
     
     for (const pos of cryptoPositions) {
@@ -1444,10 +1486,12 @@ JSON response:
     try {
       const alpaca = createAlpacaProviders(this.env);
       
-      const isCrypto = symbol.includes("/");
+      // Use proper crypto detection that handles both legacy (SOLUSD) and new (SOL/USD) formats
+      const isCrypto = isCryptoSymbol(symbol, this.state.config.crypto_symbols || []);
+      const normalizedSymbol = isCrypto ? normalizeCryptoSymbol(symbol) : symbol;
       let price = 0;
       if (isCrypto) {
-        const snapshot = await alpaca.marketData.getCryptoSnapshot(symbol).catch(() => null);
+        const snapshot = await alpaca.marketData.getCryptoSnapshot(normalizedSymbol).catch(() => null);
         price = snapshot?.latest_quote?.ask_price || snapshot?.latest_quote?.bid_price || snapshot?.latest_trade?.price || 0;
       } else {
         const quote = await alpaca.marketData.getQuote(symbol).catch(() => null);
@@ -1946,16 +1990,28 @@ Response format:
     }
     
     try {
-      const isCrypto = symbol.includes("/");
+      // Use proper crypto detection that handles both legacy (SOLUSD) and new (SOL/USD) formats
+      const isCrypto = isCryptoSymbol(symbol, this.state.config.crypto_symbols || []);
+      // Normalize crypto symbols to Alpaca's preferred format
+      const orderSymbol = isCrypto ? normalizeCryptoSymbol(symbol) : symbol;
+      // Alpaca crypto orders only support gtc or ioc; day is not supported
+      const timeInForce = isCrypto ? "gtc" : "day";
+      
       const order = await alpaca.trading.createOrder({
-        symbol,
+        symbol: orderSymbol,
         notional: Math.round(positionSize * 100) / 100,
         side: "buy",
         type: "market",
-        time_in_force: isCrypto ? "gtc" : "day",
+        time_in_force: timeInForce,
       });
       
-      this.log("Executor", "buy_executed", { symbol, status: order.status, size: positionSize });
+      this.log("Executor", "buy_executed", { 
+        symbol: orderSymbol, 
+        originalSymbol: symbol !== orderSymbol ? symbol : undefined,
+        isCrypto,
+        status: order.status, 
+        size: positionSize 
+      });
       return true;
     } catch (error) {
       this.log("Executor", "buy_failed", { symbol, error: String(error) });
