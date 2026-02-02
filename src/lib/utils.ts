@@ -10,8 +10,8 @@ export function nowISO(): string {
   return new Date().toISOString();
 }
 
-export function hashObject(obj: unknown): string {
-  const str = JSON.stringify(obj, Object.keys(obj as object).sort());
+export function hashObject(obj: object): string {
+  const str = JSON.stringify(obj, Object.keys(obj).sort());
   return simpleHash(str);
 }
 

@@ -6,9 +6,9 @@ export async function insertToolLog(
   entry: {
     request_id: string;
     tool_name: string;
-    input: unknown;
-    output?: unknown;
-    error?: unknown;
+    input: object;
+    output?: object;
+    error?: object;
     latency_ms?: number;
     provider_calls?: number;
   }

@@ -46,19 +46,26 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
   });
 
   private requestId: string = "";
-  private policyConfig: PolicyConfig | null = null;
+  private _policyConfig: PolicyConfig | null = null;
 
   private llm: LLMProvider | null = null;
   private options: OptionsProvider | null = null;
 
-  async init() {
+  private get policyConfig(): PolicyConfig {
+    if (!this._policyConfig) {
+      throw new Error("Agent not initialized: policyConfig is null");
+    }
+    return this._policyConfig;
+  }
+
+  async init(): Promise<void> {
     this.requestId = generateId();
 
     const db = createD1Client(this.env.DB);
     const alpaca = createAlpacaProviders(this.env);
 
     const storedPolicy = await getPolicyConfig(db);
-    this.policyConfig = storedPolicy ?? getDefaultPolicyConfig(this.env);
+    this._policyConfig = storedPolicy ?? getDefaultPolicyConfig(this.env);
 
     if (this.env.OPENAI_API_KEY && this.env.FEATURE_LLM_RESEARCH === "true") {
       this.llm = createOpenAIProvider({ apiKey: this.env.OPENAI_API_KEY });
@@ -128,9 +135,9 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
             options: this.env.FEATURE_OPTIONS === "true",
           },
           policy: {
-            max_position_pct_equity: this.policyConfig!.max_position_pct_equity,
-            max_notional_per_trade: this.policyConfig!.max_notional_per_trade,
-            max_daily_loss_pct: this.policyConfig!.max_daily_loss_pct,
+            max_position_pct_equity: this.policyConfig.max_position_pct_equity,
+            max_notional_per_trade: this.policyConfig.max_notional_per_trade,
+            max_daily_loss_pct: this.policyConfig.max_daily_loss_pct,
           },
         });
         return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
@@ -353,7 +360,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
             estimated_cost: estimatedCost,
           };
 
-          const policyEngine = new PolicyEngine(this.policyConfig!);
+          const policyEngine = new PolicyEngine(this.policyConfig);
           const policyResult = policyEngine.evaluate({ order: preview, account, positions, clock, riskState });
 
           if (policyResult.allowed) {
@@ -362,7 +369,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
               policyResult,
               secret: this.env.KILL_SWITCH_SECRET,
               db,
-              ttlSeconds: this.policyConfig!.approval_token_ttl_seconds,
+              ttlSeconds: this.policyConfig.approval_token_ttl_seconds,
             });
             policyResult.approval_token = approval.token;
             policyResult.approval_id = approval.approval_id;
@@ -514,7 +521,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
 
           const result = success({
             kill_switch: { active: riskState.kill_switch_active, reason: riskState.kill_switch_reason },
-            daily_loss: { usd: riskState.daily_loss_usd, pct: dailyLossPct, limit_pct: this.policyConfig!.max_daily_loss_pct },
+            daily_loss: { usd: riskState.daily_loss_usd, pct: dailyLossPct, limit_pct: this.policyConfig.max_daily_loss_pct },
             cooldown: { active: riskState.cooldown_until ? new Date(riskState.cooldown_until) > new Date() : false },
             exposure: { total_usd: totalExposure, position_count: positions.length },
             limits: this.policyConfig,
@@ -618,8 +625,8 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
         qty: z.number().positive(),
         entry_price: z.number().positive().optional(),
         trade_id: z.string().optional(),
-        signals: z.record(z.unknown()).optional(),
-        technicals: z.record(z.unknown()).optional(),
+        signals: z.record(z.number()).optional(),
+        technicals: z.record(z.union([z.number(), z.null()])).optional(),
         regime_tags: z.array(z.string()).optional(),
         notes: z.string().optional(),
       },
@@ -727,7 +734,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
     this.server.tool(
       "memory-set-preferences",
       "Store user trading preferences",
-      { preferences: z.record(z.unknown()) },
+      { preferences: z.record(z.union([z.string(), z.number(), z.boolean()])) },
       async ({ preferences }) => {
         try {
           await setPreferences(db, preferences);
@@ -1131,7 +1138,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
               volume: snapshot.daily_bar.v,
             },
             recentNews: news.map((n) => ({ headline: n.headline, date: n.published_at ?? n.created_at })),
-            technicals: technicals as unknown as Record<string, unknown>,
+            technicals,
             positions: position ? [{ qty: position.qty, avg_entry_price: position.avg_entry_price }] : [],
           });
 
@@ -1281,7 +1288,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
             estimated_cost: estimatedCost,
           };
 
-          const policyEngine = new PolicyEngine(this.policyConfig!);
+          const policyEngine = new PolicyEngine(this.policyConfig);
           const policyResult = policyEngine.evaluateOptionsOrder({
             order: preview,
             account,
@@ -1306,7 +1313,7 @@ export class MahoragaMcpAgent extends McpAgent<Env> {
               policyResult,
               secret: this.env.KILL_SWITCH_SECRET,
               db,
-              ttlSeconds: this.policyConfig!.approval_token_ttl_seconds,
+              ttlSeconds: this.policyConfig.approval_token_ttl_seconds,
             });
             policyResult.approval_token = approval.token;
             policyResult.approval_id = approval.approval_id;

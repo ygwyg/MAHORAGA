@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Panel } from './Panel'
-import { authFetch } from '../services/api'
+import { fetchJson } from '../services/api'
 
 interface SetupWizardProps {
   onComplete: () => void
@@ -28,7 +28,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
     setError(null)
 
     try {
-      const res = await authFetch('/api/setup/keys', {
+      const data = await fetchJson<unknown>('/api/setup/keys', {
         method: 'POST',
         body: JSON.stringify({
           alpaca_key: alpacaKey,
@@ -38,9 +38,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           starting_equity: startingEquity,
         }),
       })
-      
-      const data = await res.json()
-      
+
       if (data.ok) {
         setStep(3)
       } else {

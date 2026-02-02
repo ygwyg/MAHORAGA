@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Status, PortfolioSnapshot } from '../types'
 import type { Config } from '../types'
-import { API_BASE, authFetch } from '../services/api'
+import { API_BASE, fetchJson } from '../services/api'
 
 function generateMockPortfolioHistory(equity: number, points: number = 24): PortfolioSnapshot[] {
   const history: PortfolioSnapshot[] = []
@@ -40,8 +40,7 @@ export function useAgentStatus() {
   useEffect(() => {
     const checkSetup = async () => {
       try {
-        const res = await authFetch(`${API_BASE}/setup/status`)
-        const data = await res.json()
+        const data = await fetchJson<{ configured: boolean }>(`${API_BASE}/setup/status`)
         if (data.ok && !data.data.configured) {
           setShowSetup(true)
         }
@@ -56,8 +55,7 @@ export function useAgentStatus() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await authFetch(`${API_BASE}/status`)
-        const data = await res.json()
+        const data = await fetchJson<Status>(`${API_BASE}/status`)
         if (data.ok) {
           setStatus(data.data)
           setError(null)
@@ -69,9 +67,9 @@ export function useAgentStatus() {
               const now = Date.now()
               const newSnapshot: PortfolioSnapshot = {
                 timestamp: now,
-                equity: data.data.account.equity,
-                pl: data.data.account.equity - (prev[0]?.equity || data.data.account.equity),
-                pl_pct: prev[0] ? ((data.data.account.equity - prev[0].equity) / prev[0].equity) * 100 : 0,
+                equity: data.data.account!.equity,
+                pl: data.data.account!.equity - (prev[0]?.equity || data.data.account!.equity),
+                pl_pct: prev[0] ? ((data.data.account!.equity - prev[0].equity) / prev[0].equity) * 100 : 0,
               }
               return [...prev, newSnapshot].slice(-48)
             })
@@ -92,11 +90,10 @@ export function useAgentStatus() {
   }, [setupChecked, showSetup])
 
   const saveConfig = async (config: Config) => {
-    const res = await authFetch(`${API_BASE}/config`, {
+    const data = await fetchJson<Config>(`${API_BASE}/config`, {
       method: 'POST',
       body: JSON.stringify(config),
     })
-    const data = await res.json()
     if (data.ok && status) {
       setStatus({ ...status, config: data.data })
     }

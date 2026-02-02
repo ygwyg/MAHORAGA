@@ -50,7 +50,7 @@ export function PositionsTable({ positions, config, status }: PositionsTableProp
         data: normalizedData,
         variant: positionColors[idx % positionColors.length],
       }
-    }).filter(Boolean) as { label: string; data: number[]; variant: typeof positionColors[number] }[]
+    }).filter((item): item is NonNullable<typeof item> => item !== null)
   }, [positions, positionPriceHistories])
 
   return (

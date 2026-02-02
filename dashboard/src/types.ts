@@ -40,7 +40,6 @@ export interface LogEntry {
   agent: string
   action: string
   symbol?: string
-  [key: string]: unknown
 }
 
 export interface CostTracker {

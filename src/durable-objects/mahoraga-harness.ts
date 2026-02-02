@@ -194,6 +194,69 @@ interface PremarketPlan {
   researched_buys: ResearchResult[];
 }
 
+// ── Position & staleness analysis types ──────────────────────────────────────
+
+interface PositionResearchResult {
+  recommendation: "HOLD" | "SELL" | "ADD";
+  risk_level: "low" | "medium" | "high";
+  reasoning: string;
+  key_factors: string[];
+  timestamp: number;
+}
+
+interface StalenessResult {
+  isStale: boolean;
+  reason: string;
+  staleness_score: number;
+}
+
+// ── Social API response types ────────────────────────────────────────────────
+
+interface StockTwitsTrendingResponse {
+  symbols?: Array<{ symbol: string }>;
+}
+
+interface StockTwitsStreamResponse {
+  messages?: Array<{
+    entities?: { sentiment?: { basic?: string } };
+    created_at?: string;
+  }>;
+}
+
+interface RedditListingResponse {
+  data?: {
+    children?: Array<{
+      data: {
+        title?: string;
+        selftext?: string;
+        created_utc?: number;
+        ups?: number;
+        num_comments?: number;
+        link_flair_text?: string;
+      };
+    }>;
+  };
+}
+
+interface TwitterSearchResponse {
+  data?: Array<{
+    id: string;
+    text: string;
+    created_at: string;
+    author_id: string;
+    public_metrics?: { retweet_count?: number; like_count?: number };
+  }>;
+  includes?: {
+    users?: Array<{
+      id: string;
+      username: string;
+      public_metrics?: { followers_count?: number };
+    }>;
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface AgentState {
   config: AgentConfig;
   signalCache: Signal[];
@@ -205,8 +268,8 @@ interface AgentState {
   lastAnalystRun: number;
   lastResearchRun: number;
   signalResearch: Record<string, ResearchResult>;
-  positionResearch: Record<string, unknown>;
-  stalenessAnalysis: Record<string, unknown>;
+  positionResearch: Record<string, PositionResearchResult>;
+  stalenessAnalysis: Record<string, StalenessResult>;
   twitterConfirmations: Record<string, TwitterConfirmation>;
   twitterDailyReads: number;
   twitterDailyReadReset: number;
@@ -822,7 +885,7 @@ export class MahoragaHarness extends DurableObject<Env> {
         this.log("StockTwits", "trending_failed", { status: trendingRes.status, statusText: trendingRes.statusText });
         return [];
       }
-      const trendingData = await trendingRes.json() as { symbols?: Array<{ symbol: string }> };
+      const trendingData = await trendingRes.json() as StockTwitsTrendingResponse;
       const trending = trendingData.symbols || [];
       this.log("StockTwits", "trending_fetched", { count: trending.length });
       
@@ -831,7 +894,7 @@ export class MahoragaHarness extends DurableObject<Env> {
         try {
           const streamRes = await fetch(`https://api.stocktwits.com/api/2/streams/symbol/${sym.symbol}.json?limit=30`);
           if (!streamRes.ok) continue;
-          const streamData = await streamRes.json() as { messages?: Array<{ entities?: { sentiment?: { basic?: string } }; created_at?: string }> };
+          const streamData = await streamRes.json() as StockTwitsStreamResponse;
           const messages = streamData.messages || [];
           
           // Analyze sentiment
@@ -908,7 +971,7 @@ export class MahoragaHarness extends DurableObject<Env> {
           this.log("Reddit", "fetch_failed", { subreddit: sub, status: res.status, statusText: res.statusText });
           continue;
         }
-        const data = await res.json() as { data?: { children?: Array<{ data: { title?: string; selftext?: string; created_utc?: number; ups?: number; num_comments?: number; link_flair_text?: string } }> } };
+        const data = await res.json() as RedditListingResponse;
         const posts = data.data?.children?.map(c => c.data) || [];
         
         for (const post of posts) {
@@ -1322,22 +1385,7 @@ JSON response:
         return [];
       }
 
-      const data = await res.json() as {
-        data?: Array<{
-          id: string;
-          text: string;
-          created_at: string;
-          author_id: string;
-          public_metrics?: { retweet_count?: number; like_count?: number };
-        }>;
-        includes?: {
-          users?: Array<{
-            id: string;
-            username: string;
-            public_metrics?: { followers_count?: number };
-          }>;
-        };
-      };
+      const data = await res.json() as TwitterSearchResponse;
 
       this.spendTwitterRead(1);
 
@@ -1704,12 +1752,7 @@ Provide a brief risk assessment and recommendation (HOLD, SELL, or ADD). JSON fo
       }
 
       const content = response.choices[0]?.message?.content || "{}";
-      const analysis = JSON.parse(content.replace(/```json\n?|```/g, "").trim()) as {
-        recommendation: "HOLD" | "SELL" | "ADD";
-        risk_level: "low" | "medium" | "high";
-        reasoning: string;
-        key_factors: string[];
-      };
+      const analysis = JSON.parse(content.replace(/```json\n?|```/g, "").trim()) as Omit<PositionResearchResult, "timestamp">;
 
       this.state.positionResearch[symbol] = { ...analysis, timestamp: Date.now() };
       this.log("PositionResearch", "position_analyzed", {
@@ -2103,11 +2146,7 @@ Response format:
   // - Social volume decay (vs entry volume)
   // ============================================================================
 
-  private analyzeStaleness(symbol: string, currentPrice: number, currentSocialVolume: number): {
-    isStale: boolean;
-    reason: string;
-    staleness_score: number;
-  } {
+  private analyzeStaleness(symbol: string, currentPrice: number, currentSocialVolume: number): StalenessResult {
     const entry = this.state.positionEntries[symbol];
     if (!entry) {
       return { isStale: false, reason: "No entry data", staleness_score: 0 };

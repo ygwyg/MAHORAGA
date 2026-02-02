@@ -1,4 +1,4 @@
-import { D1Client, StructuredEventRow } from "../client";
+import { D1Client, StructuredEventRow, type SqlParam } from "../client";
 import { generateId, nowISO } from "../../../lib/utils";
 
 export async function insertRawEvent(
@@ -85,7 +85,7 @@ export async function queryStructuredEvents(
 ): Promise<StructuredEventRow[]> {
   const { event_type, symbol, validated, limit = 50, offset = 0 } = params;
   const conditions: string[] = [];
-  const values: unknown[] = [];
+  const values: SqlParam[] = [];
 
   if (event_type) {
     conditions.push("event_type = ?");
@@ -168,7 +168,7 @@ export async function queryNewsItems(
 ): Promise<NewsItemRow[]> {
   const { symbol, source, limit = 50, offset = 0 } = params;
   const conditions: string[] = [];
-  const values: unknown[] = [];
+  const values: SqlParam[] = [];
 
   if (symbol) {
     conditions.push("symbols LIKE ?");

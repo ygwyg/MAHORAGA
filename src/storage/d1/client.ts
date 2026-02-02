@@ -1,11 +1,13 @@
 
 
+export type SqlParam = string | number | boolean | null | ArrayBuffer;
+
 export class D1Client {
   constructor(private db: D1Database) {}
 
-  async execute<T = unknown>(
+  async execute<T>(
     query: string,
-    params: unknown[] = []
+    params: SqlParam[] = []
   ): Promise<T[]> {
     const result = await this.db
       .prepare(query)
@@ -14,9 +16,9 @@ export class D1Client {
     return result.results;
   }
 
-  async executeOne<T = unknown>(
+  async executeOne<T>(
     query: string,
-    params: unknown[] = []
+    params: SqlParam[] = []
   ): Promise<T | null> {
     const result = await this.db
       .prepare(query)
@@ -25,7 +27,7 @@ export class D1Client {
     return result;
   }
 
-  async run(query: string, params: unknown[] = []): Promise<D1Result> {
+  async run(query: string, params: SqlParam[] = []): Promise<D1Result> {
     return this.db.prepare(query).bind(...params).run();
   }
 

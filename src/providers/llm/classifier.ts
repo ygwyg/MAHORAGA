@@ -1,4 +1,5 @@
 import type { LLMProvider } from "../types";
+import type { TechnicalIndicators } from "../technicals";
 import type { EventType } from "../../mcp/types";
 import { nowISO } from "../../lib/utils";
 
@@ -112,9 +113,9 @@ export async function generateResearchReport(
   llm: LLMProvider,
   symbol: string,
   context: {
-    overview?: Record<string, unknown>;
+    overview?: { price: number; change_pct: number; volume: number };
     recentNews?: Array<{ headline: string; date: string }>;
-    technicals?: Record<string, unknown>;
+    technicals?: TechnicalIndicators;
     positions?: Array<{ qty: number; avg_entry_price: number }>;
   }
 ): Promise<string> {

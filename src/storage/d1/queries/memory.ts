@@ -1,4 +1,4 @@
-import { D1Client, TradeJournalRow } from "../client";
+import { D1Client, TradeJournalRow, type SqlParam } from "../client";
 import { generateId, nowISO } from "../../../lib/utils";
 
 interface CreateJournalEntryParams {
@@ -8,8 +8,8 @@ interface CreateJournalEntryParams {
   entry_price?: number;
   entry_at?: string;
   qty: number;
-  signals?: Record<string, unknown>;
-  technicals?: Record<string, unknown>;
+  signals?: Record<string, number>;
+  technicals?: Record<string, number | null>;
   regime_tags?: string[];
   event_ids?: string[];
   notes?: string;
@@ -93,7 +93,7 @@ export async function queryJournal(
 ): Promise<TradeJournalRow[]> {
   const { symbol, outcome, regime_tag, limit = 50, offset = 0 } = params;
   const conditions: string[] = [];
-  const values: unknown[] = [];
+  const values: SqlParam[] = [];
 
   if (symbol) {
     conditions.push("symbol = ?");
@@ -145,7 +145,7 @@ export async function getJournalStats(
     FROM trade_journal
     WHERE created_at >= ?
   `;
-  const values: unknown[] = [dateLimit];
+  const values: SqlParam[] = [dateLimit];
 
   if (symbol) {
     query += " AND symbol = ?";
@@ -206,7 +206,7 @@ export async function getActiveRules(db: D1Client): Promise<MemoryRuleRow[]> {
 
 export async function getPreferences(
   db: D1Client
-): Promise<Record<string, unknown>> {
+): Promise<Record<string, string | number | boolean>> {
   const row = await db.executeOne<{ preferences_json: string }>(
     `SELECT preferences_json FROM memory_preferences WHERE id = 1`
   );
@@ -215,7 +215,7 @@ export async function getPreferences(
 
 export async function setPreferences(
   db: D1Client,
-  preferences: Record<string, unknown>
+  preferences: Record<string, string | number | boolean>
 ): Promise<void> {
   await db.run(
     `UPDATE memory_preferences SET preferences_json = ?, updated_at = ? WHERE id = 1`,

@@ -18,14 +18,14 @@ export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 export interface ToolError {
   code: ErrorCode;
   message: string;
-  details?: unknown;
+  details?: Record<string, unknown>;
 }
 
 export class MahoragaError extends Error {
   constructor(
     public readonly code: ErrorCode,
     message: string,
-    public readonly details?: unknown
+    public readonly details?: Record<string, unknown>
   ) {
     super(message);
     this.name = "MahoragaError";
@@ -43,7 +43,7 @@ export class MahoragaError extends Error {
 export function createError(
   code: ErrorCode,
   message: string,
-  details?: unknown
+  details?: Record<string, unknown>
 ): MahoragaError {
   return new MahoragaError(code, message, details);
 }

@@ -14,11 +14,13 @@ export function failure(error: ToolError): ToolResult<never> {
   return { ok: false, error };
 }
 
+export type PolicyValue = string | number | boolean | string[];
+
 export interface PolicyViolation {
   rule: string;
   message: string;
-  current_value: unknown;
-  limit_value: unknown;
+  current_value: PolicyValue;
+  limit_value: PolicyValue;
 }
 
 export interface PolicyWarning {

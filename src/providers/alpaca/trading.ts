@@ -170,7 +170,7 @@ export class AlpacaTradingProvider implements BrokerProvider {
   }
 
   async createOrder(params: OrderParams): Promise<Order> {
-    const body: Record<string, unknown> = {
+    const body: Record<string, string | boolean> = {
       symbol: params.symbol,
       side: params.side,
       type: params.type,
