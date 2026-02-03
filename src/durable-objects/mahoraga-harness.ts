@@ -1988,13 +1988,23 @@ Response format:
         }
       }
 
-      if (positions.length < this.state.config.max_positions) {
-        const analysis = await this.analyzeSignalsWithLLM(this.state.signalCache, positions, account);
-        const researchedSymbols = new Set(researchedBuys.map(r => r.symbol));
+      const analysis = await this.analyzeSignalsWithLLM(this.state.signalCache, positions, account);
+      const researchedSymbols = new Set(researchedBuys.map(r => r.symbol));
 
-        for (const rec of analysis.recommendations) {
-          if (positions.length >= this.state.config.max_positions) break;
-          if (rec.action !== "BUY" || rec.confidence < this.state.config.min_analyst_confidence) continue;
+      for (const rec of analysis.recommendations) {
+        if (rec.confidence < this.state.config.min_analyst_confidence) continue;
+
+        if (rec.action === "SELL" && heldSymbols.has(rec.symbol)) {
+          const result = await this.executeSell(alpaca, rec.symbol, `LLM recommendation: ${rec.reasoning}`);
+          if (result) {
+            heldSymbols.delete(rec.symbol);
+            this.log("Analyst", "llm_sell_executed", { symbol: rec.symbol, confidence: rec.confidence, reasoning: rec.reasoning });
+          }
+          continue;
+        }
+
+        if (rec.action === "BUY") {
+          if (positions.length >= this.state.config.max_positions) continue;
           if (heldSymbols.has(rec.symbol)) continue;
           if (researchedSymbols.has(rec.symbol)) continue;
 
