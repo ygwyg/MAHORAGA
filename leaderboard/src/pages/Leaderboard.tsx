@@ -303,6 +303,9 @@ interface LeaderboardRowProps {
 
 function LeaderboardRow({ trader, rank, onClick }: LeaderboardRowProps) {
   const syncing = !!trader.pending_sync;
+  // Account has data but score not yet computed by cron (runs every 15 min)
+  const isNew = !syncing && trader.composite_score === null;
+  const unranked = syncing || isNew;
 
   return (
     <tr
@@ -321,7 +324,7 @@ function LeaderboardRow({ trader, rank, onClick }: LeaderboardRowProps) {
         <span
           className={clsx(
             "text-[13px] font-medium",
-            syncing
+            unranked
               ? "text-hud-text-dim"
               : rank === 1
                 ? "text-rank-gold"
@@ -332,7 +335,7 @@ function LeaderboardRow({ trader, rank, onClick }: LeaderboardRowProps) {
                     : "text-hud-text-dim"
           )}
         >
-          {syncing ? "--" : rank}
+          {unranked ? "--" : rank}
         </span>
       </td>
       <td className="px-4 py-3">
@@ -345,7 +348,14 @@ function LeaderboardRow({ trader, rank, onClick }: LeaderboardRowProps) {
               Syncing
             </span>
           ) : (
-            <AssetBadge assetClass={trader.asset_class} />
+            <>
+              <AssetBadge assetClass={trader.asset_class} />
+              {isNew && (
+                <span className="text-[9px] font-mono uppercase tracking-[0.1em] px-1.5 py-0.5 border border-hud-cyan/50 text-hud-cyan">
+                  New
+                </span>
+              )}
+            </>
           )}
         </div>
       </td>
