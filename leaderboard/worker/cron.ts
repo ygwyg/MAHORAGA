@@ -63,8 +63,10 @@ export async function runCronCycle(env: Env): Promise<void> {
  * Edge cases:
  *   - If all traders have the same value for a metric (min = max),
  *     that component contributes 0 to avoid division by zero.
- *   - Traders without Sharpe or Win Rate (too few trading days) get score 0.
- *     They appear at the bottom of the leaderboard until enough data accumulates.
+ *   - Traders without Sharpe or Win Rate (too few trading days) get a partial
+ *     score using only ROI (72.7%) and inverse drawdown (27.3%). This keeps
+ *     the 40:15 ratio between these two components while ensuring traders
+ *     with positive ROI rank above those with zero ROI.
  *
  * Implementation: 2 D1 calls regardless of trader count.
  *   Step 1: Aggregate min/max ranges across all traders' latest snapshots.
@@ -109,23 +111,24 @@ export async function computeAndStoreCompositeScores(env: Env): Promise<void> {
       FROM performance_snapshots GROUP BY trader_id
     )
     UPDATE performance_snapshots
-    SET composite_score = CASE
-      WHEN sharpe_ratio IS NULL OR win_rate IS NULL THEN 0.0
-      ELSE ROUND((
-        CASE WHEN ?1 = ?2 THEN 0.0
-             ELSE MAX(0.0, MIN(1.0, (total_pnl_pct - ?1) / (?2 - ?1)))
-        END * 0.4 +
-        CASE WHEN ?3 = ?4 THEN 0.0
-             ELSE MAX(0.0, MIN(1.0, (sharpe_ratio - ?3) / (?4 - ?3)))
-        END * 0.3 +
-        CASE WHEN ?5 = ?6 THEN 0.0
-             ELSE MAX(0.0, MIN(1.0, (win_rate - ?5) / (?6 - ?5)))
-        END * 0.15 +
-        CASE WHEN ?7 = ?8 THEN 0.0
-             ELSE MAX(0.0, MIN(1.0, ((100.0 - max_drawdown_pct) - ?7) / (?8 - ?7)))
-        END * 0.15
-      ) * 100.0, 1)
-    END
+    SET composite_score = ROUND((
+      -- ROI component (40% weight, or 72.7% if sharpe/wr missing)
+      CASE WHEN ?1 = ?2 THEN 0.0
+           ELSE MAX(0.0, MIN(1.0, (total_pnl_pct - ?1) / (?2 - ?1)))
+      END * CASE WHEN sharpe_ratio IS NULL OR win_rate IS NULL THEN 0.727 ELSE 0.4 END +
+      -- Sharpe component (30% weight, or 0% if missing)
+      CASE WHEN sharpe_ratio IS NULL OR ?3 = ?4 THEN 0.0
+           ELSE MAX(0.0, MIN(1.0, (sharpe_ratio - ?3) / (?4 - ?3))) * 0.3
+      END +
+      -- Win rate component (15% weight, or 0% if missing)
+      CASE WHEN win_rate IS NULL OR ?5 = ?6 THEN 0.0
+           ELSE MAX(0.0, MIN(1.0, (win_rate - ?5) / (?6 - ?5))) * 0.15
+      END +
+      -- Inverse max drawdown component (15% weight, or 27.3% if sharpe/wr missing)
+      CASE WHEN ?7 = ?8 THEN 0.0
+           ELSE MAX(0.0, MIN(1.0, ((100.0 - max_drawdown_pct) - ?7) / (?8 - ?7)))
+      END * CASE WHEN sharpe_ratio IS NULL OR win_rate IS NULL THEN 0.273 ELSE 0.15 END
+    ) * 100.0, 1)
     FROM latest
     WHERE performance_snapshots.trader_id = latest.trader_id
       AND performance_snapshots.snapshot_date = latest.max_date
