@@ -20,10 +20,19 @@ import type { SyncMessage, StaleTraderRow, ScoreRangesRow } from "./types";
 export async function runCronCycle(env: Env): Promise<void> {
   console.log("[cron] Starting cycle");
 
-  await computeAndStoreCompositeScores(env);
-  await assignSyncTiers(env);
-  await reEnqueueStaleTraders(env);
-  await rebuildCaches(env);
+  // Each step is isolated so a failure in one doesn't skip the rest.
+  // E.g., if composite scores fail, tiers/caches/re-enqueue still run.
+  try { await computeAndStoreCompositeScores(env); }
+  catch (err) { console.error("[cron] computeAndStoreCompositeScores failed:", err instanceof Error ? err.message : err); }
+
+  try { await assignSyncTiers(env); }
+  catch (err) { console.error("[cron] assignSyncTiers failed:", err instanceof Error ? err.message : err); }
+
+  try { await reEnqueueStaleTraders(env); }
+  catch (err) { console.error("[cron] reEnqueueStaleTraders failed:", err instanceof Error ? err.message : err); }
+
+  try { await rebuildCaches(env); }
+  catch (err) { console.error("[cron] rebuildCaches failed:", err instanceof Error ? err.message : err); }
 
   console.log("[cron] Cycle complete");
 }

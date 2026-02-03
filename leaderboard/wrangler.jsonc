@@ -81,6 +81,18 @@
     { "pattern": "sukuna.dev", "custom_domain": true }
   ],
 
+  // Observability: persistent logs + auto-instrumented traces
+  // Logs capture all invocations (fetch, cron, queue, DO) + console output + exceptions
+  // Traces auto-instrument outbound fetch(), KV, DO calls with timing and status
+  // View in dashboard: Workers & Pages → mahoraga-leaderboard → Logs / Traces
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "invocation_logs": true,
+      "head_sampling_rate": 1
+    }
+  },
+
   // Cron: every 15 min for composite scores, tier assignment, stale trader re-enqueue
   "triggers": {
     "crons": [

@@ -270,7 +270,10 @@ export async function fetchTotalFilledOrderCount(
     const res = await fetch(`${BASE}/v2/orders?${params}`, {
       headers: headers(token),
     });
-    if (!res.ok) break;
+    if (!res.ok) {
+      console.error(`[alpaca] fetchTotalFilledOrderCount: orders endpoint returned ${res.status} mid-pagination (counted ${total} so far)`);
+      break;
+    }
 
     const orders = (await res.json()) as Record<string, unknown>[];
     if (orders.length === 0) break;

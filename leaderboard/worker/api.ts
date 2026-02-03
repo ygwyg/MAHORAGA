@@ -230,7 +230,8 @@ export async function getTraderProfile(username: string, env: Env): Promise<Resp
   ).bind(trader.id).first<SnapshotDbRow>();
 
   const data = { trader, snapshot };
-  await setCachedTraderProfile(env, username, data);
+  try { await setCachedTraderProfile(env, username, data); }
+  catch (err) { console.error(`[api] Cache write failed for profile ${username}:`, err instanceof Error ? err.message : err); }
   return json(data);
 }
 
@@ -263,7 +264,8 @@ export async function getTraderTrades(
   ).bind(trader.id, limit, offset).all();
 
   const data = { trades: result.results, meta: { limit, offset } };
-  await setCachedTraderTrades(env, username, limit, offset, data);
+  try { await setCachedTraderTrades(env, username, limit, offset, data); }
+  catch (err) { console.error(`[api] Cache write failed for trades ${username}:`, err instanceof Error ? err.message : err); }
   return json(data);
 }
 
@@ -296,7 +298,8 @@ export async function getTraderEquity(
   ).bind(trader.id, days).all();
 
   const data = { equity: result.results };
-  await setCachedTraderEquity(env, username, days, data);
+  try { await setCachedTraderEquity(env, username, days, data); }
+  catch (err) { console.error(`[api] Cache write failed for equity ${username}:`, err instanceof Error ? err.message : err); }
   return json(data);
 }
 
@@ -459,6 +462,7 @@ export async function handleOAuthCallback(
   });
 
   if (!accountRes.ok) {
+    console.error("[oauth] Alpaca account verification failed:", accountRes.status, await accountRes.text());
     return errorJson("Failed to verify Alpaca paper account", 502);
   }
 

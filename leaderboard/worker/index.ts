@@ -50,12 +50,21 @@ export default {
   },
 
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(runCronCycle(env));
+    ctx.waitUntil(
+      runCronCycle(env).catch((err) => {
+        console.error("[scheduled] Cron cycle failed:", err instanceof Error ? err.message : err);
+      })
+    );
   },
 
   async queue(batch: MessageBatch, env: Env): Promise<void> {
     for (const message of batch.messages) {
-      await processSyncMessage(message as Message<SyncMessage>, env);
+      try {
+        await processSyncMessage(message as Message<SyncMessage>, env);
+      } catch (err) {
+        console.error("[queue] Unhandled error processing message:", err instanceof Error ? err.message : err);
+        message.retry();
+      }
     }
   },
 } satisfies ExportedHandler<Env>;
@@ -115,7 +124,7 @@ async function handleApi(
 
     return errorJson("Not found", 404);
   } catch (err) {
-    console.error("API error:", err);
+    console.error(`[api] ${request.method} ${path} error:`, err instanceof Error ? err.message : err);
     return errorJson("Internal server error", 500);
   }
 }
@@ -139,7 +148,8 @@ async function handleDevSync(username: string, env: Env): Promise<Response> {
   let token: string;
   try {
     token = await decryptToken(row.access_token_encrypted, env.ENCRYPTION_KEY, row.id);
-  } catch {
+  } catch (err) {
+    console.error(`[dev-sync] Decrypt failed for ${username}:`, err instanceof Error ? err.message : err);
     return json({ error: "Failed to decrypt token" }, 500);
   }
 

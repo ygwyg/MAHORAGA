@@ -318,7 +318,8 @@ export class SyncerDO extends DurableObject<Env> {
         ? `${err.endpoint}: ${err.status}`
         : (err instanceof Error ? err.message : "Unknown error");
 
-      console.error(`Sync failed for trader ${traderId}:`, msg);
+      console.error(`[syncer] Sync failed for trader ${traderId}:`, msg,
+        isAlpacaError ? err.body : "");
 
       return {
         success: false,

@@ -40,8 +40,8 @@ export async function processSyncMessage(
       env.ENCRYPTION_KEY,
       traderId
     );
-  } catch {
-    console.error(`[queue] Failed to decrypt token for trader ${traderId}`);
+  } catch (err) {
+    console.error(`[queue] Failed to decrypt token for trader ${traderId}:`, err instanceof Error ? err.message : err);
     message.ack();
     return;
   }
@@ -54,20 +54,30 @@ export async function processSyncMessage(
   const tier = row.sync_tier as SyncTier;
 
   if (result.success) {
-    // 4a. Success: invalidate trader cache, re-enqueue with tier delay
+    // 4a. Success: ack first, then cache/re-enqueue (non-fatal if they fail)
     message.ack();
-    await invalidateTraderCache(env, row.username);
-    await env.SYNC_QUEUE.send(
-      { traderId } satisfies SyncMessage,
-      { delaySeconds: tierDelaySeconds(tier) }
-    );
+    try { await invalidateTraderCache(env, row.username); }
+    catch (err) { console.error(`[queue] Cache invalidation failed for ${row.username}:`, err instanceof Error ? err.message : err); }
+    try {
+      await env.SYNC_QUEUE.send(
+        { traderId } satisfies SyncMessage,
+        { delaySeconds: tierDelaySeconds(tier) }
+      );
+    } catch (err) {
+      console.error(`[queue] Re-enqueue failed for trader ${traderId} (tier ${tier}):`, err instanceof Error ? err.message : err);
+    }
   } else if (result.alpacaStatus === 401) {
     // 4b. Token revoked: delete token and let message die (no re-enqueue)
     message.ack();
-    await env.DB.prepare(`DELETE FROM oauth_tokens WHERE trader_id = ?1`).bind(traderId).run();
+    try {
+      await env.DB.prepare(`DELETE FROM oauth_tokens WHERE trader_id = ?1`).bind(traderId).run();
+    } catch (err) {
+      console.error(`[queue] Failed to delete revoked token for ${traderId}:`, err instanceof Error ? err.message : err);
+    }
     console.log(`[queue] Token revoked for trader ${traderId}, removed oauth_token`);
   } else {
-    // 4c. Transient failure: retry with exponential backoff, capped at 6h.
+    // 4c. Transient failure: log it and retry with exponential backoff, capped at 6h.
+    console.error(`[queue] Sync failed for trader ${traderId} (attempt ${message.attempts}): ${result.error}`);
     const backoffDelay = Math.min(
       tierDelaySeconds(tier) * Math.pow(2, message.attempts - 1),
       21600
