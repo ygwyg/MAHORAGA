@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Config } from '../types'
 import { Panel } from './Panel'
 
@@ -12,10 +12,6 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
   const [localConfig, setLocalConfig] = useState<Config>(config)
   const [saving, setSaving] = useState(false)
   const [apiToken, setApiToken] = useState(localStorage.getItem('mahoraga_api_token') || '')
-
-  useEffect(() => {
-    setLocalConfig(config)
-  }, [config])
 
   const handleTokenSave = () => {
     if (apiToken) {
