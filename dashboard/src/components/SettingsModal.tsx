@@ -206,7 +206,7 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                   onChange={e => handleChange('llm_provider', e.target.value)}
                 >
                   <option value="openai-raw">OpenAI Direct (default)</option>
-                  <option value="ai-sdk">AI SDK (8 providers)</option>
+                  <option value="ai-sdk">AI SDK (5 providers)</option>
                   <option value="cloudflare-gateway">Cloudflare AI Gateway</option>
                   {localConfig.llm_provider &&
                     !['openai-raw', 'ai-sdk', 'cloudflare-gateway'].includes(localConfig.llm_provider) && (
@@ -214,7 +214,7 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                     )}
                 </select>
                 <p className="text-[9px] text-hud-text-dim mt-1">
-                  {localConfig.llm_provider === 'ai-sdk' && 'Supports: OpenAI, Anthropic, Google, Mistral, xAI, Groq, DeepSeek, Cohere'}
+                  {localConfig.llm_provider === 'ai-sdk' && 'Supports: OpenAI, Anthropic, Google, xAI, DeepSeek'}
                   {(!localConfig.llm_provider || localConfig.llm_provider === 'openai-raw') && 'Uses OPENAI_API_KEY directly.'}
                   {localConfig.llm_provider &&
                     !['openai-raw', 'ai-sdk', 'cloudflare-gateway'].includes(localConfig.llm_provider) &&
