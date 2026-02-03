@@ -15,15 +15,8 @@
 import { tierDelaySeconds, type SyncTier } from "./tiers";
 import { decryptToken } from "./crypto";
 import { invalidateTraderCache } from "./cache";
+import { isTransientFailure, markInactive, clearFailureState } from "./failure-handling";
 import type { SyncMessage, TraderWithTokenRow } from "./types";
-
-/** Check if a failure is transient (retry) vs bad signal (mark inactive). */
-function isTransientFailure(alpacaStatus: number | undefined): boolean {
-  if (alpacaStatus === undefined) return false; // No status = bad signal
-  if (alpacaStatus >= 500) return true; // 5xx = Alpaca server error
-  if (alpacaStatus === 429) return true; // Rate limited
-  return false;
-}
 
 export async function processSyncMessage(
   message: Message<SyncMessage>,
@@ -96,42 +89,6 @@ export async function processSyncMessage(
     message.ack();
     // Re-enqueue to keep trying during grace period (can still recover)
     await safeReEnqueue(env, traderId, tier);
-  }
-}
-
-/**
- * Mark trader as inactive and record failure info.
- * Only sets first_failure_at if not already set (preserves original failure time).
- */
-async function markInactive(env: Env, traderId: string, reason: string): Promise<void> {
-  try {
-    await env.DB.prepare(
-      `UPDATE traders SET
-         is_active = 0,
-         first_failure_at = COALESCE(first_failure_at, datetime('now')),
-         last_failure_reason = ?2
-       WHERE id = ?1`
-    ).bind(traderId, reason).run();
-  } catch (err) {
-    console.error(`[queue] Failed to mark trader ${traderId} inactive:`, err instanceof Error ? err.message : err);
-  }
-}
-
-/**
- * Clear failure state on successful sync (auto-recovery).
- * Sets is_active = 1 and clears failure tracking fields.
- */
-async function clearFailureState(env: Env, traderId: string): Promise<void> {
-  try {
-    await env.DB.prepare(
-      `UPDATE traders SET
-         is_active = 1,
-         first_failure_at = NULL,
-         last_failure_reason = NULL
-       WHERE id = ?1`
-    ).bind(traderId).run();
-  } catch (err) {
-    console.error(`[queue] Failed to clear failure state for trader ${traderId}:`, err instanceof Error ? err.message : err);
   }
 }
 

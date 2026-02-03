@@ -36,6 +36,17 @@ function normalizeGithubUrl(raw: string): string {
   return raw.trim().toLowerCase().replace(/\/+$/, "").replace(/\.git$/, "");
 }
 
+/** Get trader ID by username. Returns undefined if not found or inactive. */
+async function getActiveTraderIdByUsername(
+  env: Env,
+  username: string
+): Promise<string | undefined> {
+  const result = await env.DB.prepare(
+    `SELECT id FROM traders WHERE username = ?1 AND is_active = 1`
+  ).bind(username).first<Pick<TraderDbRow, "id">>();
+  return result?.id;
+}
+
 // ---------------------------------------------------------------------------
 // Leaderboard query options
 // ---------------------------------------------------------------------------
@@ -266,17 +277,14 @@ export async function getTraderTrades(
     });
   }
 
-  const trader = await env.DB.prepare(
-    `SELECT id FROM traders WHERE username = ?1 AND is_active = 1`
-  ).bind(username).first<Pick<TraderDbRow, "id">>();
-
-  if (!trader) return json({ error: "Trader not found" }, 404);
+  const traderId = await getActiveTraderIdByUsername(env, username);
+  if (!traderId) return json({ error: "Trader not found" }, 404);
 
   const result = await env.DB.prepare(
     `SELECT symbol, side, qty, price, filled_at, asset_class
      FROM trades WHERE trader_id = ?1 ORDER BY filled_at DESC
      LIMIT ?2 OFFSET ?3`
-  ).bind(trader.id, limit, offset).all();
+  ).bind(traderId, limit, offset).all();
 
   const data = { trades: result.results, meta: { limit, offset } };
   try { await setCachedTraderTrades(env, username, limit, offset, data); }
@@ -299,11 +307,8 @@ export async function getTraderEquity(
     });
   }
 
-  const trader = await env.DB.prepare(
-    `SELECT id FROM traders WHERE username = ?1 AND is_active = 1`
-  ).bind(username).first<Pick<TraderDbRow, "id">>();
-
-  if (!trader) return json({ error: "Trader not found" }, 404);
+  const traderId = await getActiveTraderIdByUsername(env, username);
+  if (!traderId) return json({ error: "Trader not found" }, 404);
 
   // Security: Compute date boundary in JS to avoid SQL string concatenation.
   const dateBoundary = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -313,7 +318,7 @@ export async function getTraderEquity(
      FROM equity_history
      WHERE trader_id = ?1 AND timestamp >= ?2
      ORDER BY timestamp ASC`
-  ).bind(trader.id, dateBoundary).all();
+  ).bind(traderId, dateBoundary).all();
 
   const data = { equity: result.results };
   try { await setCachedTraderEquity(env, username, days, data); }

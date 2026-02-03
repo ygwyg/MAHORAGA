@@ -22,7 +22,8 @@ import {
 } from "./api";
 import { decryptToken } from "./crypto";
 import { invalidateTraderCache } from "./cache";
-import type { SyncMessage, TraderWithTokenRow } from "./types";
+import { isTransientFailure, markInactive, clearFailureState } from "./failure-handling";
+import type { SyncMessage } from "./types";
 
 // Re-export DO class so the Vite plugin bundles it
 export { SyncerDO };
@@ -130,7 +131,7 @@ async function handleApi(
 }
 
 // ---------------------------------------------------------------------------
-// Dev-only: Manual Sync (bypasses queue for local testing)
+// Dev-only: Manual Sync (applies same failure tracking as queue handler)
 // ---------------------------------------------------------------------------
 
 async function handleDevSync(username: string, env: Env): Promise<Response> {
@@ -149,8 +150,11 @@ async function handleDevSync(username: string, env: Env): Promise<Response> {
   try {
     token = await decryptToken(row.access_token_encrypted, env.ENCRYPTION_KEY, row.id);
   } catch (err) {
-    console.error(`[dev-sync] Decrypt failed for ${username}:`, err instanceof Error ? err.message : err);
-    return json({ error: "Failed to decrypt token" }, 500);
+    // Decrypt failure = bad signal
+    const reason = `Decrypt failed: ${err instanceof Error ? err.message : "unknown"}`;
+    console.error(`[dev-sync] ${reason} for ${username}`);
+    await markInactive(env, row.id, reason);
+    return json({ error: reason, is_active: 0, first_failure_at: "now" }, 500);
   }
 
   const doId = env.SYNCER.idFromName(row.id);
@@ -158,8 +162,15 @@ async function handleDevSync(username: string, env: Env): Promise<Response> {
   const result = await stub.sync(row.id, token);
 
   if (result.success) {
+    // Success: clear failure state (auto-recovery)
+    await clearFailureState(env, row.id);
     await invalidateTraderCache(env, username);
+  } else if (!isTransientFailure(result.alpacaStatus)) {
+    // Bad signal: mark inactive
+    const reason = result.error || `Alpaca ${result.alpacaStatus}`;
+    await markInactive(env, row.id, reason);
   }
+  // Transient failures: don't change is_active
 
   return json(result);
 }
