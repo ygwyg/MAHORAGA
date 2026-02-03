@@ -37,7 +37,9 @@ export default {
     }
 
     if (path.startsWith("/api/")) {
-      const response = await handleApi(request, env, path);
+      const raw = await handleApi(request, env, path);
+      // Response.redirect() returns immutable headers — clone to make mutable
+      const response = new Response(raw.body, raw);
       for (const [key, value] of Object.entries(corsHeaders())) {
         response.headers.set(key, value);
       }
