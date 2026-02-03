@@ -168,6 +168,7 @@ interface ResearchResult {
   reasoning: string;
   red_flags: string[];
   catalysts: string[];
+  sentiment: number;
   timestamp: number;
 }
 
@@ -1261,6 +1262,7 @@ JSON response:
         reasoning: analysis.reasoning,
         red_flags: analysis.red_flags || [],
         catalysts: analysis.catalysts || [],
+        sentiment,
         timestamp: Date.now(),
       };
 
@@ -1636,6 +1638,7 @@ JSON response:
         reasoning: analysis.reasoning,
         red_flags: analysis.red_flags || [],
         catalysts: analysis.catalysts || [],
+        sentiment: sentimentScore,
         timestamp: Date.now(),
       };
 

@@ -34,12 +34,14 @@ export function SignalResearchPanel({ signalResearch, isAgentEnabled }: SignalRe
                         <span className="text-hud-text-dim">Confidence</span>
                         <span className="text-hud-text-bright">{(research.confidence * 100).toFixed(0)}%</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-hud-text-dim">Sentiment</span>
-                        <span className={getSentimentColor(research.sentiment)}>
-                          {(research.sentiment * 100).toFixed(0)}%
-                        </span>
-                      </div>
+                      {research.sentiment != null && (
+                        <div className="flex justify-between">
+                          <span className="text-hud-text-dim">Sentiment</span>
+                          <span className={getSentimentColor(research.sentiment)}>
+                            {(research.sentiment * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-hud-text-dim">Analyzed</span>
                         <span className="text-hud-text">
