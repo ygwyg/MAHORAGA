@@ -7,7 +7,7 @@ export function Privacy({ navigate }: PrivacyProps) {
     <div className="max-w-[700px] mx-auto">
       <div className="mb-8">
         <h1 className="hud-value-xl mb-3">Privacy Policy</h1>
-        <p className="hud-label">Last updated: February 2, 2025</p>
+        <p className="hud-label">Last updated: February 2, 2026</p>
       </div>
 
       <section className="hud-panel p-6 mb-4">
@@ -46,8 +46,10 @@ export function Privacy({ navigate }: PrivacyProps) {
             Data from Alpaca OAuth
           </h3>
           <p className="hud-value-sm text-hud-text-dim leading-relaxed mb-2">
-            When you connect your Alpaca paper trading account, we receive
-            read-only access to:
+            When you connect your Alpaca paper trading account, the OAuth
+            connection does not request trading, write, or market data
+            scopes&mdash;only the default read-only access provided by Alpaca.
+            This grants us read access to:
           </p>
           <ul className="hud-value-sm text-hud-text-dim leading-relaxed list-disc list-inside flex flex-col gap-1">
             <li>
@@ -74,7 +76,7 @@ export function Privacy({ navigate }: PrivacyProps) {
           <p className="hud-value-sm text-hud-text-dim leading-relaxed mt-2">
             We do not receive your Alpaca API keys, passwords, or personal
             identity information (name, email, address) through the OAuth
-            connection. The connection is paper-trading-only and read-only.
+            connection.
           </p>
         </div>
 

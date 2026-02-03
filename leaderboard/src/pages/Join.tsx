@@ -202,24 +202,23 @@ export function Join() {
             {/* Body */}
             <div className="px-6 py-5">
               <p className="hud-value-sm text-hud-text-dim leading-relaxed mb-4">
-                By allowing{" "}
+                By connecting your Alpaca account, you are granting{" "}
                 <strong className="text-hud-text">MAHORAGA Leaderboard</strong>{" "}
-                to access your Alpaca account, you are granting MAHORAGA
-                Leaderboard access to your account information and authorization
-                to place transactions in your account at your direction.
+                read-only access to your paper trading account data. The OAuth
+                connection does not request trading, write, or market data
+                scopes&mdash;only the default read-only access provided by
+                Alpaca.
               </p>
               <p className="hud-value-sm text-hud-text-dim leading-relaxed mb-4">
-                Alpaca does not warrant or guarantee that MAHORAGA Leaderboard
-                will work as advertised or expected.
+                We read your account equity, positions, portfolio history, trade
+                history, and deposit activity to compute and display leaderboard
+                metrics. We cannot place trades, modify your account settings,
+                or access your API keys.
               </p>
               <p className="hud-value-sm text-hud-text-dim leading-relaxed">
-                This connection is{" "}
-                <strong className="text-hud-text">
-                  read-only and paper-trading-only
-                </strong>
-                . We cannot place trades, modify your account, or access your
-                API keys. You can revoke access at any time from your Alpaca
-                dashboard.
+                You can revoke access at any time from your Alpaca dashboard.
+                Alpaca does not warrant or guarantee that MAHORAGA Leaderboard
+                will work as advertised or expected.
               </p>
             </div>
 

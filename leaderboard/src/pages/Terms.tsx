@@ -7,7 +7,7 @@ export function Terms({ navigate }: TermsProps) {
     <div className="max-w-[700px] mx-auto">
       <div className="mb-8">
         <h1 className="hud-value-xl mb-3">Terms of Use</h1>
-        <p className="hud-label">Last updated: February 2, 2025</p>
+        <p className="hud-label">Last updated: February 2, 2026</p>
       </div>
 
       <section className="hud-panel p-6 mb-4">
@@ -63,10 +63,12 @@ export function Terms({ navigate }: TermsProps) {
         </h2>
         <p className="hud-value-sm text-hud-text-dim leading-relaxed mb-3">
           By connecting your Alpaca account, you authorize the Service to
-          access your paper trading account data in read-only mode. This
-          includes account equity, positions, trade history, and portfolio
-          metrics. The Service cannot place trades, modify your account
-          settings, or access your API keys.
+          access your paper trading account data via OAuth. The OAuth
+          connection does not request trading, write, or market data
+          scopes&mdash;only the default read-only access provided by Alpaca.
+          This includes account equity, positions, trade history, portfolio
+          history, and deposit activity. The Service cannot place trades,
+          modify your account settings, or access your API keys.
         </p>
         <p className="hud-value-sm text-hud-text-dim leading-relaxed">
           You may revoke this access at any time from your Alpaca dashboard.
