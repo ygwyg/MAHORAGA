@@ -205,7 +205,6 @@ export function Sparkline({
   data,
   width = 80,
   height = 24,
-  variant: _variant = 'cyan',
 }: SparklineProps) {
   if (data.length < 2) return null
 

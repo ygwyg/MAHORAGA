@@ -38,8 +38,12 @@ export interface AISDKConfig {
   apiKeys: Partial<Record<SupportedProvider, string>>;
 }
 
-// Provider factory type for cleaner code
-type ProviderFactory = ReturnType<typeof createOpenAI>;
+type ProviderFactory =
+  | ReturnType<typeof createOpenAI>
+  | ReturnType<typeof createAnthropic>
+  | ReturnType<typeof createGoogleGenerativeAI>
+  | ReturnType<typeof createXai>
+  | ReturnType<typeof createDeepSeek>;
 
 /**
  * AI SDK Provider - Supports multiple AI providers via Vercel AI SDK
@@ -59,16 +63,16 @@ export class AISDKProvider implements LLMProvider {
       this.providers.openai = createOpenAI({ apiKey: config.apiKeys.openai });
     }
     if (config.apiKeys.anthropic) {
-      this.providers.anthropic = createAnthropic({ apiKey: config.apiKeys.anthropic }) as unknown as ProviderFactory;
+      this.providers.anthropic = createAnthropic({ apiKey: config.apiKeys.anthropic });
     }
     if (config.apiKeys.google) {
-      this.providers.google = createGoogleGenerativeAI({ apiKey: config.apiKeys.google }) as unknown as ProviderFactory;
+      this.providers.google = createGoogleGenerativeAI({ apiKey: config.apiKeys.google });
     }
     if (config.apiKeys.xai) {
-      this.providers.xai = createXai({ apiKey: config.apiKeys.xai }) as unknown as ProviderFactory;
+      this.providers.xai = createXai({ apiKey: config.apiKeys.xai });
     }
     if (config.apiKeys.deepseek) {
-      this.providers.deepseek = createDeepSeek({ apiKey: config.apiKeys.deepseek }) as unknown as ProviderFactory;
+      this.providers.deepseek = createDeepSeek({ apiKey: config.apiKeys.deepseek });
     }
 
     if (Object.keys(this.providers).length === 0) {

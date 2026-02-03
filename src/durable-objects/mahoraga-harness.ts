@@ -440,13 +440,14 @@ export class MahoragaHarness extends DurableObject<Env> {
   }
 
   private initializeLLM() {
-    const effectiveEnv = { ...this.env };
     const provider = this.state.config.llm_provider || this.env.LLM_PROVIDER || "openai-raw";
     const model = this.state.config.llm_model || this.env.LLM_MODEL || "gpt-4o-mini";
 
-    // Override env for the factory
-    (effectiveEnv as any).LLM_PROVIDER = provider;
-    (effectiveEnv as any).LLM_MODEL = model;
+    const effectiveEnv: Env = {
+      ...this.env,
+      LLM_PROVIDER: provider as Env["LLM_PROVIDER"],
+      LLM_MODEL: model,
+    };
 
     this._llm = createLLMProvider(effectiveEnv);
     if (this._llm) {
