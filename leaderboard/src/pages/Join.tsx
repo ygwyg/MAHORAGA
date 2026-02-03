@@ -237,16 +237,29 @@ export function Join() {
               <p className="hud-value-sm text-hud-text-dim leading-relaxed mb-4">
                 By connecting your Alpaca account, you are granting{" "}
                 <strong className="text-hud-text">MAHORAGA Leaderboard</strong>{" "}
-                read-only access to your paper trading account data. The OAuth
-                connection does not request trading, write, or market data
-                scopes&mdash;only the default read-only access provided by
-                Alpaca.
+                access to your paper trading account data.
+              </p>
+              <p className="hud-value-sm text-hud-text-dim leading-relaxed mb-4">
+                <strong className="text-hud-text">Note:</strong> Alpaca&apos;s
+                authorization page displays generic language about &quot;placing
+                transactions.&quot; This is standard OAuth boilerplate&mdash;our
+                application only reads your data. We never place trades, modify
+                your account, or access your API keys. You can verify this in
+                our{" "}
+                <a
+                  href="https://github.com/ygwyg/MAHORAGA/tree/main/leaderboard"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-hud-text underline"
+                >
+                  open source code
+                </a>
+                .
               </p>
               <p className="hud-value-sm text-hud-text-dim leading-relaxed mb-4">
                 We read your account equity, positions, portfolio history, trade
                 history, and deposit activity to compute and display leaderboard
-                metrics. We cannot place trades, modify your account settings,
-                or access your API keys.
+                metrics.
               </p>
               <p className="hud-value-sm text-hud-text-dim leading-relaxed">
                 You can revoke access at any time from your Alpaca dashboard.
