@@ -29,6 +29,7 @@ const SORTS: { value: SortField; label: string }[] = [
   { value: "total_pnl", label: "P&L" },
   { value: "sharpe_ratio", label: "Sharpe" },
   { value: "win_rate", label: "Win Rate" },
+  { value: "max_drawdown_pct", label: "Drawdown" },
   { value: "num_trades", label: "Trades" },
 ];
 

@@ -55,28 +55,93 @@ export class SyncerDO extends DurableObject<Env> {
       const recentOrders = await fetchClosedOrders(accessToken, 200);
 
       // ---------------------------------------------------------------
-      // Compute metrics from portfolio history
+      // P&L Calculation — Starting Capital Baseline
+      // ---------------------------------------------------------------
+      //
+      // Alpaca paper accounts can be seeded with any amount ($1 to $1M).
+      // The initial seed is NOT a "deposit" in Alpaca's activity system —
+      // it doesn't generate CSD (Cash Deposit) activity records. This
+      // means fetchTotalDeposits() returns $0 for paper accounts that
+      // haven't had explicit transfers.
+      //
+      // To correctly calculate P&L (profit above/below starting capital),
+      // we need the "cost basis" — the total capital put into the account.
+      // We determine this with a fallback chain:
+      //
+      //   1. CSD deposits > 0 → Use sum of CSD activities as cost basis.
+      //      This handles the case where the initial seed IS recorded
+      //      as a CSD, or where a Broker API sandbox account has explicit
+      //      transfers. For standard paper accounts, CSD total is $0.
+      //
+      //   2. CSD deposits = 0 → Use portfolio history `base_value`.
+      //      Alpaca's GET /v2/account/portfolio/history returns `base_value`
+      //      which is the account equity at the beginning of the requested
+      //      period. With period=all, this is the first day's equity —
+      //      whatever the account was originally seeded with. This is the
+      //      correct cost basis because it represents the initial capital
+      //      before any trading occurred.
+      //
+      // Example: Account seeded with $50k, trades up to $75k
+      //   effectiveDeposits = $50,000 (from base_value)
+      //   totalPnl = $75,000 - $50,000 = $25,000 ← correct profit
+      //   totalPnlPct = ($25,000 / $50,000) * 100 = 50% ← correct ROI
+      //
+      // The starting balance is NOT counted as profit. Only gains or
+      // losses relative to that baseline are reflected in P&L metrics.
+      // This works regardless of whether the account was seeded with
+      // $1k or $1M — the math adapts to the actual starting capital.
+      //
+      // Note: Users cannot add funds to an existing paper account via
+      // Alpaca's Trading API. To "reset" they must delete and recreate
+      // the account (which generates new API keys and a new account ID).
       // ---------------------------------------------------------------
 
       const equity = account.equity;
       const cash = account.cash;
+
+      // Day P&L: change in equity since previous market close.
+      // Alpaca updates `last_equity` at end of each trading day.
       const dayPnl = equity - account.last_equity;
+
+      // Determine the cost basis (total capital put into the account).
+      // See detailed explanation above for why this fallback chain works.
       const effectiveDeposits = totalDeposits > 0 ? totalDeposits : history.base_value;
+
+      // Total P&L: current equity minus cost basis. This is the net profit
+      // (or loss) including both realized gains from closed trades and
+      // unrealized gains from open positions.
       const totalPnl = equity - effectiveDeposits;
+
+      // Total P&L %: return on investment as a percentage of cost basis.
       const totalPnlPct =
         effectiveDeposits > 0 ? ((equity - effectiveDeposits) / effectiveDeposits) * 100 : 0;
 
+      // Split total P&L into unrealized (open positions) and realized (closed trades).
+      // Unrealized P&L comes directly from Alpaca's position data.
+      // Realized P&L is derived: total P&L minus what's still unrealized.
       const unrealizedPnl = positions.reduce((s, p) => s + p.unrealized_pl, 0);
       const realizedPnl = totalPnl - unrealizedPnl;
 
-      // Sharpe ratio from daily equity
+      // ---------------------------------------------------------------
+      // Advanced Metrics (from daily equity curve)
+      // ---------------------------------------------------------------
+
+      // Filter out zero-equity days (account not yet funded or data gaps)
       const dailyEquity = history.equity.filter((e) => e > 0);
+
+      // Annualized Sharpe ratio: risk-adjusted return metric.
+      // Higher = better returns per unit of risk taken.
+      // Requires 5+ days of equity data. See metrics.ts for formula.
       const sharpe = calcSharpeRatio(dailyEquity);
 
-      // Max drawdown from daily equity
+      // Maximum drawdown: worst peak-to-trough decline as a percentage.
+      // Lower = better capital preservation. A 10% max drawdown means
+      // the account never fell more than 10% from its highest point.
       const maxDrawdownPct = calcMaxDrawdown(dailyEquity);
 
-      // Win rate from daily P&L
+      // Win rate: percentage of trading days with positive P&L.
+      // Based on days, not individual trades, to avoid rewarding
+      // high-frequency churn. See metrics.ts for details.
       const winResult = calcWinRate(history.profit_loss);
       const winRate = winResult?.rate ?? null;
       const winningDays = winResult?.winning ?? 0;
@@ -93,7 +158,16 @@ export class SyncerDO extends DurableObject<Env> {
 
       const statements: D1PreparedStatement[] = [];
 
-      // 1. Performance snapshot
+      // 1. Performance snapshot — one row per trader per day.
+      //    INSERT OR REPLACE ensures only the latest sync for today is kept.
+      //    composite_score is set to NULL here and computed later by cron
+      //    (min-max normalization requires seeing all traders' data).
+      //
+      //    Column mapping:
+      //      total_deposits    = effectiveDeposits (starting capital, not just CSD deposits)
+      //      num_trades        = filledCount (total filled orders, ALL-TIME via pagination)
+      //      num_winning_trades = winningDays (profitable DAYS, not individual trades)
+      //      win_rate          = % of active trading days with positive P&L
       statements.push(
         this.env.DB.prepare(
           `INSERT OR REPLACE INTO performance_snapshots
@@ -123,7 +197,10 @@ export class SyncerDO extends DurableObject<Env> {
         )
       );
 
-      // 2. Derive asset_class from positions + recent orders
+      // 2. Derive asset_class from positions + recent orders.
+      //    This is a sticky classification: once a trader has both stocks and
+      //    crypto, they stay as "both" even if they later only trade one.
+      //    Used for the asset class filter on the leaderboard (stocks/crypto/all).
       const hasCrypto =
         positions.some((p) => p.asset_class === "crypto") ||
         recentOrders.some((o) => o.asset_class === "crypto");
@@ -154,7 +231,11 @@ export class SyncerDO extends DurableObject<Env> {
 
       await this.env.DB.batch(statements);
 
-      // 4. Insert equity history points in batches
+      // 4. Insert equity history points in batches.
+      //    Stores up to 365 daily data points from Alpaca's portfolio history.
+      //    Used for sparklines on the leaderboard (last 30 points) and the
+      //    equity curve chart on trader profiles (up to 90 days displayed).
+      //    Older history beyond 365 days is truncated.
       const equityPoints: D1PreparedStatement[] = [];
       const maxPoints = Math.min(history.timestamp.length, 365);
       const startIdx = Math.max(0, history.timestamp.length - maxPoints);
@@ -179,7 +260,11 @@ export class SyncerDO extends DurableObject<Env> {
         await this.env.DB.batch(equityPoints.slice(i, i + 80));
       }
 
-      // 5. Upsert recent trades
+      // 5. Upsert recent trades.
+      //    Stores the latest 200 filled orders for display on the trader
+      //    profile page. This is NOT the total trade count — that comes from
+      //    fetchTotalFilledOrderCount() which paginates through all orders.
+      //    The trades table is delete-and-reinsert to stay fresh.
       await this.env.DB.prepare(
         `DELETE FROM trades WHERE trader_id = ?1`
       ).bind(traderId).run();

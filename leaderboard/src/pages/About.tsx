@@ -154,6 +154,33 @@ export function About({ navigate }: AboutProps) {
 
           <div>
             <div className="hud-value-sm text-hud-text-bright mb-1">
+              How is P&L calculated?
+            </div>
+            <div className="hud-value-sm text-hud-text-dim leading-relaxed">
+              Alpaca paper accounts can be seeded with any amount ($1 to
+              $1M). P&L is measured as the difference between your current
+              equity and your starting capital&mdash;the seed amount is
+              never counted as profit. If you start with $50k and grow to
+              $75k, your P&L is +$25k (+50% ROI). All numbers come
+              directly from Alpaca&apos;s API, not self-reported data.
+            </div>
+          </div>
+
+          <div>
+            <div className="hud-value-sm text-hud-text-bright mb-1">
+              Does the starting balance count as profit?
+            </div>
+            <div className="hud-value-sm text-hud-text-dim leading-relaxed">
+              No. Your starting capital is the baseline, not profit.
+              ROI and P&L are always measured relative to this baseline.
+              An account that stays at its starting balance has 0% ROI
+              and $0 P&L. Only gains (or losses) above starting capital
+              are reflected in your metrics.
+            </div>
+          </div>
+
+          <div>
+            <div className="hud-value-sm text-hud-text-bright mb-1">
               Can I participate without Cloudflare Workers?
             </div>
             <div className="hud-value-sm text-hud-text-dim leading-relaxed">

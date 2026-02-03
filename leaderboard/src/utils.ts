@@ -19,9 +19,11 @@ export function formatPnl(value: number, decimals = 0): string {
   return `${sign}$${Math.abs(value).toLocaleString(undefined, { maximumFractionDigits: decimals })}`;
 }
 
-/** Format a number as a dollar string (e.g. "$1,234"). */
+/** Format a number as a dollar string (e.g. "$1,234" or "-$567"). */
 export function formatCurrency(value: number, decimals = 0): string {
-  return `$${value.toLocaleString(undefined, { maximumFractionDigits: decimals })}`;
+  const abs = Math.abs(value);
+  const formatted = abs.toLocaleString(undefined, { maximumFractionDigits: decimals });
+  return value < 0 ? `-$${formatted}` : `$${formatted}`;
 }
 
 /** Format a number or null with a fixed decimal, falling back to "--". */

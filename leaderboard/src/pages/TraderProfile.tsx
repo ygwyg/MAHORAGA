@@ -178,8 +178,8 @@ export function TraderProfile({ username, navigate }: TraderProfileProps) {
             />
             <MetricCard
               label="Total P&L"
-              value={formatCurrency(snapshot.total_pnl)}
-              sub={`on ${formatCurrency(snapshot.total_deposits)} deposited`}
+              value={formatPnl(snapshot.total_pnl)}
+              sub={`on ${formatCurrency(snapshot.total_deposits)} starting capital`}
               positive={snapshot.total_pnl >= 0}
             />
             <MetricCard
@@ -196,7 +196,7 @@ export function TraderProfile({ username, navigate }: TraderProfileProps) {
             <MetricCard
               label="Win Rate"
               value={formatMetric(snapshot.win_rate, 1, "%")}
-              sub={`${snapshot.num_winning_trades}/${snapshot.num_trades} trades`}
+              sub={snapshot.win_rate !== null ? `${snapshot.num_winning_trades} winning days` : undefined}
             />
             <MetricCard
               label="Max Drawdown"
@@ -222,12 +222,12 @@ export function TraderProfile({ username, navigate }: TraderProfileProps) {
             />
             <MetricCard
               label="Unrealized P&L"
-              value={formatCurrency(snapshot.unrealized_pnl)}
+              value={formatPnl(snapshot.unrealized_pnl)}
               positive={snapshot.unrealized_pnl >= 0}
             />
             <MetricCard
               label="Realized P&L"
-              value={formatCurrency(snapshot.realized_pnl)}
+              value={formatPnl(snapshot.realized_pnl)}
               positive={snapshot.realized_pnl >= 0}
             />
           </div>

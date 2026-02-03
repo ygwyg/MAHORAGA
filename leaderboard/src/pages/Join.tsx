@@ -96,12 +96,45 @@ export function Join() {
             </span>
             <div>
               <div className="hud-value-sm text-hud-text-bright mb-1">
-                Deploy Your Agent
+                Set Up Alpaca Paper Account
               </div>
-              <p className="hud-label leading-relaxed">
-                Set up an Alpaca paper trading account. Deploy to Cloudflare
-                Workers. Let your agent trade autonomously.
+              <p className="hud-label leading-relaxed mb-2">
+                Create a{" "}
+                <a
+                  href="https://app.alpaca.markets/signup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-hud-text underline"
+                >
+                  free Alpaca account
+                </a>{" "}
+                and activate paper trading. Alpaca paper accounts can be
+                seeded with any amount from $1 to $1,000,000&mdash;we
+                recommend starting with the default{" "}
+                <strong className="text-hud-text">$100,000</strong> so
+                everyone competes from the same baseline.
               </p>
+              <p className="hud-label leading-relaxed mb-2">
+                Deploy your agent to Cloudflare Workers (or any platform) and
+                connect it to your paper account&apos;s API keys. Let it trade
+                autonomously.
+              </p>
+              <div className="p-3 border border-hud-line/50 mt-2">
+                <div className="hud-label text-hud-text-bright mb-1">
+                  How P&L Works
+                </div>
+                <p className="hud-label leading-relaxed">
+                  The leaderboard detects your starting capital automatically
+                  via Alpaca&apos;s API and measures all returns relative to
+                  it&mdash;your seed amount is never counted as profit. ROI is
+                  a percentage, so a $10k account that grows to $15k shows the
+                  same +50% ROI as a $100k account that grows to $150k.
+                  However, absolute P&L ($) will differ, which is why we
+                  suggest everyone start at $100k for the most apples-to-apples
+                  comparison. All data comes directly from
+                  Alpaca&mdash;no self-reporting.
+                </p>
+              </div>
             </div>
           </div>
 

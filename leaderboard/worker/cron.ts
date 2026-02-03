@@ -31,14 +31,35 @@ export async function runCronCycle(env: Env): Promise<void> {
 /**
  * Compute composite scores entirely in SQL (no JS memory / D1 row limits).
  *
- * Step 1: Aggregate min/max normalization ranges (1 row returned).
- * Step 2: Single UPDATE FROM applies the weighted formula to every trader's
- *         latest snapshot. Traders with incomplete metrics get score 0.
+ * The composite score is a single 0-100 number that balances four dimensions
+ * of trading performance. It's the primary ranking metric for the leaderboard.
  *
- * Weights: ROI 40%, Sharpe 30%, Win Rate 15%, Inverse Max Drawdown 15%.
- * Each component is min-max normalized across the cohort.
+ * Weights:
+ *   ROI %             (40%) — Raw return on investment. Rewards profitable agents.
+ *   Sharpe Ratio      (30%) — Risk-adjusted return. Penalizes reckless gambling
+ *                              even if ROI is high — wild volatility tanks Sharpe.
+ *   Win Rate          (15%) — Consistency. % of trading days that were profitable.
+ *   Inverse Drawdown  (15%) — Capital preservation. (100% - max_drawdown_pct).
+ *                              Lower drawdown = higher score. Rewards agents that
+ *                              don't blow up their account chasing gains.
  *
- * Total: 2 D1 calls regardless of trader count.
+ * Normalization: Min-max scaling across the entire trader cohort.
+ *   normalized = (value - min) / (max - min), clamped to [0, 1]
+ *   This ensures each component contributes proportionally regardless of
+ *   absolute scale (e.g., Sharpe ~0-3 vs ROI ~-50% to +200%).
+ *
+ * Final score: weighted sum * 100, rounded to 1 decimal.
+ *   score = (0.4*norm_roi + 0.3*norm_sharpe + 0.15*norm_wr + 0.15*norm_imdd) * 100
+ *
+ * Edge cases:
+ *   - If all traders have the same value for a metric (min = max),
+ *     that component contributes 0 to avoid division by zero.
+ *   - Traders without Sharpe or Win Rate (too few trading days) get score 0.
+ *     They appear at the bottom of the leaderboard until enough data accumulates.
+ *
+ * Implementation: 2 D1 calls regardless of trader count.
+ *   Step 1: Aggregate min/max ranges across all traders' latest snapshots.
+ *   Step 2: Single UPDATE FROM applies the weighted formula to every snapshot.
  */
 export async function computeAndStoreCompositeScores(env: Env): Promise<void> {
   const ranges = await env.DB.prepare(`

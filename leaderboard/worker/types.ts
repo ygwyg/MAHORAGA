@@ -25,6 +25,8 @@ export interface OAuthTokenDbRow {
   trader_id: string;
   access_token_encrypted: string;
   alpaca_account_id: string | null;
+  /** Account equity at OAuth connection time. Used for fairness validation. */
+  initial_equity: number | null;
   connected_at: string;
   last_used_at: string | null;
 }

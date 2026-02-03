@@ -29,6 +29,11 @@ CREATE TABLE IF NOT EXISTS oauth_tokens (
   trader_id TEXT PRIMARY KEY REFERENCES traders(id) ON DELETE CASCADE,
   access_token_encrypted TEXT NOT NULL,
   alpaca_account_id TEXT UNIQUE,           -- dedup: one Alpaca account per leaderboard entry
+  -- Account equity at the moment of OAuth connection. Recorded for audit trail
+  -- and fairness validation. Alpaca paper accounts can be seeded with any
+  -- amount ($1 to $1M). This field tracks what the account equity was at
+  -- the time of registration, regardless of the starting seed amount.
+  initial_equity REAL,
   connected_at TEXT NOT NULL DEFAULT (datetime('now')),
   last_used_at TEXT                        -- last successful API call
 );
@@ -48,9 +53,9 @@ CREATE TABLE IF NOT EXISTS performance_snapshots (
   unrealized_pnl REAL NOT NULL DEFAULT 0,
   realized_pnl REAL NOT NULL DEFAULT 0,
   day_pnl REAL NOT NULL DEFAULT 0,
-  num_trades INTEGER NOT NULL DEFAULT 0,
-  num_winning_trades INTEGER NOT NULL DEFAULT 0,
-  win_rate REAL,
+  num_trades INTEGER NOT NULL DEFAULT 0,           -- total filled orders (all-time, via pagination)
+  num_winning_trades INTEGER NOT NULL DEFAULT 0,   -- count of profitable TRADING DAYS (not individual trades)
+  win_rate REAL,                                   -- num_winning_trades / active_trading_days * 100
   max_drawdown_pct REAL,
   sharpe_ratio REAL,
   open_positions INTEGER NOT NULL DEFAULT 0,

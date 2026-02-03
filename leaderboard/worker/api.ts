@@ -80,6 +80,8 @@ export async function getLeaderboard(request: Request, env: Env): Promise<Respon
 export async function queryLeaderboard(env: Env, opts: LeaderboardQueryOptions) {
   const { period, sort, assetClass, minTrades, limit, offset } = opts;
 
+  // Sort whitelist prevents SQL injection. Only these columns can be sorted.
+  // max_drawdown_pct sorts ASC (lower = better), all others sort DESC (higher = better).
   const allowedSorts = [
     "composite_score", "total_pnl_pct", "total_pnl",
     "sharpe_ratio", "win_rate", "max_drawdown_pct", "num_trades",
@@ -87,6 +89,17 @@ export async function queryLeaderboard(env: Env, opts: LeaderboardQueryOptions) 
   const sortCol = allowedSorts.includes(sort) ? sort : "composite_score";
   const sortDir = sortCol === "max_drawdown_pct" ? "ASC" : "DESC";
 
+  // The query joins each trader with their most recent snapshot within the
+  // selected period. Note: the period filter controls DATA FRESHNESS, not
+  // the metric calculation window. A "30D" filter shows traders whose most
+  // recent snapshot falls within the last 30 days, but the metrics in that
+  // snapshot (ROI, Sharpe, etc.) reflect all-time performance up to that date.
+  //
+  // Traders with no snapshot yet (just registered, first sync pending) are
+  // included with pending_sync=1 so the UI can show a "syncing" placeholder.
+  //
+  // The min_trades filter (default 10) excludes traders with fewer total
+  // filled orders, preventing one-shot luck from appearing on the board.
   let query = `
     SELECT
       t.id, t.username, t.github_repo, t.asset_class,
@@ -107,10 +120,13 @@ export async function queryLeaderboard(env: Env, opts: LeaderboardQueryOptions) 
 
   const params: (string | number)[] = [period, minTrades];
 
+  // Asset class filter: "stocks" or "crypto" also includes traders classified
+  // as "both" (they trade both asset types and belong in either filtered view).
   if (assetClass !== "all") {
     query += ` AND (t.asset_class = ?${params.length + 1} OR t.asset_class = 'both')`;
     params.push(assetClass);
   }
+  // NULLS LAST ensures traders with no data (pending sync) appear at the bottom.
   query += ` ORDER BY ps.${sortCol} ${sortDir} NULLS LAST`;
   query += ` LIMIT ?${params.length + 1} OFFSET ?${params.length + 2}`;
   params.push(limit, offset);
@@ -156,14 +172,20 @@ export async function getLeaderboardStats(env: Env): Promise<Response> {
 }
 
 export async function queryStats(env: Env) {
-  const [statsResult, tradeCountResult, pnlSumResult] = await env.DB.batch([
+  // Note: We use SUM(num_trades) from latest snapshots rather than COUNT(*)
+  // from the trades table, because the trades table only holds the most recent
+  // 200 orders per trader (syncer deletes and reinserts on each sync).
+  // The num_trades column in snapshots comes from fetchTotalFilledOrderCount()
+  // which paginates through ALL closed orders for the true lifetime count.
+  const [statsResult, pnlAndTradesResult] = await env.DB.batch([
     env.DB.prepare(`
       SELECT COUNT(*) as total_traders
       FROM traders WHERE is_active = 1
     `),
-    env.DB.prepare(`SELECT COUNT(*) as c FROM trades`),
     env.DB.prepare(`
-      SELECT COALESCE(SUM(ps.total_pnl), 0) as total_pnl
+      SELECT
+        COALESCE(SUM(ps.total_pnl), 0) as total_pnl,
+        COALESCE(SUM(ps.num_trades), 0) as total_trades
       FROM performance_snapshots ps
       INNER JOIN (
         SELECT trader_id, MAX(snapshot_date) as d
@@ -173,13 +195,12 @@ export async function queryStats(env: Env) {
   ]);
 
   const stats = statsResult.results[0] as Record<string, unknown> | undefined;
-  const tradeCount = tradeCountResult.results[0] as Record<string, unknown> | undefined;
-  const pnlSum = pnlSumResult.results[0] as Record<string, unknown> | undefined;
+  const pnlAndTrades = pnlAndTradesResult.results[0] as Record<string, unknown> | undefined;
 
   return {
     total_traders: (stats?.total_traders as number) || 0,
-    total_trades: (tradeCount?.c as number) || 0,
-    total_pnl: (pnlSum?.total_pnl as number) || 0,
+    total_trades: (pnlAndTrades?.total_trades as number) || 0,
+    total_pnl: (pnlAndTrades?.total_pnl as number) || 0,
   };
 }
 
@@ -427,7 +448,12 @@ export async function handleOAuthCallback(
     scope: string;
   };
 
-  // Verify paper account access
+  // Verify paper account access and record initial equity for fairness auditing.
+  // Alpaca paper accounts can be seeded with any amount ($1 to $1M).
+  // We record the equity at connection time so we can:
+  //   1. Know what each trader's starting capital was
+  //   2. Provide an audit trail for leaderboard fairness disputes
+  //   3. Detect accounts that were already trading before registration
   const accountRes = await fetch(`${ALPACA_PAPER_API}/v2/account`, {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
@@ -436,7 +462,11 @@ export async function handleOAuthCallback(
     return errorJson("Failed to verify Alpaca paper account", 502);
   }
 
-  const account = (await accountRes.json()) as { id: string };
+  const accountRaw = (await accountRes.json()) as Record<string, unknown>;
+  const account = {
+    id: accountRaw.id as string,
+    equity: parseFloat(accountRaw.equity as string),
+  };
 
   // Dedup: ensure this Alpaca account isn't already linked to another trader
   const linkedTrader = await env.DB.prepare(
@@ -464,9 +494,9 @@ export async function handleOAuthCallback(
        VALUES (?1, ?2, ?3)`
     ).bind(traderId, pending.username, pending.github_repo),
     env.DB.prepare(
-      `INSERT INTO oauth_tokens (trader_id, access_token_encrypted, alpaca_account_id)
-       VALUES (?1, ?2, ?3)`
-    ).bind(traderId, encryptedToken, account.id),
+      `INSERT INTO oauth_tokens (trader_id, access_token_encrypted, alpaca_account_id, initial_equity)
+       VALUES (?1, ?2, ?3, ?4)`
+    ).bind(traderId, encryptedToken, account.id, account.equity),
   ]);
 
   // Enqueue immediate first sync

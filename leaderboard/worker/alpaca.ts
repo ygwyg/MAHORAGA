@@ -124,6 +124,11 @@ export async function fetchPositions(
  * Fetch daily portfolio history. Returns parallel arrays of timestamps, equity,
  * profit_loss, and profit_loss_pct. These are already numbers (exception to the
  * strings-everywhere pattern).
+ *
+ * Key field: `base_value` — the account equity at the start of the requested
+ * period. With period=all, this is the initial account funding (whatever
+ * the paper account was seeded with). The syncer uses this as the cost
+ * basis for P&L calculations when no explicit CSD deposits exist.
  */
 export async function fetchPortfolioHistory(
   token: string,
@@ -155,6 +160,19 @@ export async function fetchPortfolioHistory(
 /**
  * Fetch all cash deposits (CSD activities) with pagination.
  * Returns the total deposited amount.
+ *
+ * For standard Alpaca paper accounts:
+ *   - The initial seed (any amount from $1 to $1M) is NOT recorded as a CSD activity.
+ *   - This function returns $0 for accounts with no explicit deposits.
+ *   - The syncer handles this by falling back to portfolio history base_value.
+ *
+ * For Broker API sandbox accounts:
+ *   - Simulated transfers DO appear as CSD activities.
+ *   - This function would return the actual deposit total.
+ *
+ * Users cannot programmatically add funds to a standard paper account.
+ * To "reset" they must delete and recreate via the Alpaca dashboard,
+ * which generates a new account ID and new API keys.
  */
 export async function fetchTotalDeposits(token: string): Promise<number> {
   let total = 0;
