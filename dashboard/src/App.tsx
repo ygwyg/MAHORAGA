@@ -459,7 +459,9 @@ export default function App() {
                                 position="right"
                                 content={
                                   <TooltipContent
-                                    title={pos.symbol}
+                                    title={isCryptoSymbol(pos.symbol, config?.crypto_symbols)
+                                      ? `${formatCryptoSymbol(pos.symbol, config?.crypto_symbols)} - CRYPTO`
+                                      : pos.symbol}
                                     items={[
                                       { label: 'Entry Price', value: posEntry ? formatCurrency(posEntry.entry_price) : 'N/A' },
                                       { label: 'Current Price', value: formatCurrency(pos.current_price) },
