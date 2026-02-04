@@ -57,7 +57,32 @@ function getAgentColor(agent: string): string {
 }
 
 function isCryptoSymbol(symbol: string, cryptoSymbols: string[] = []): boolean {
-  return cryptoSymbols.includes(symbol) || symbol.includes('/USD') || symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('SOL')
+  const upperSymbol = symbol.toUpperCase()
+  const matchesConfig = cryptoSymbols.some(cs => {
+    const normalizedConfig = cs.toUpperCase()
+    if (upperSymbol === normalizedConfig) return true
+    const baseSymbol = normalizedConfig.split('/')[0]
+    const quoteSymbol = normalizedConfig.split('/')[1] || 'USD'
+    return upperSymbol === `${baseSymbol}${quoteSymbol}`
+  })
+  return matchesConfig || /^[A-Z]{2,5}\/(USD|USDT|USDC)$/.test(upperSymbol)
+}
+
+function formatCryptoSymbol(symbol: string, cryptoSymbols: string[] = []): string {
+  if (symbol.includes('/')) return symbol
+  const upperSymbol = symbol.toUpperCase()
+  for (const cs of cryptoSymbols) {
+    const baseSymbol = cs.split('/')[0].toUpperCase()
+    if (upperSymbol.startsWith(baseSymbol)) {
+      const quote = upperSymbol.slice(baseSymbol.length)
+      if (quote.length >= 3 && ['USD', 'USDT', 'USDC'].includes(quote)) {
+        return `${baseSymbol}/${quote}`
+      }
+    }
+  }
+  const match = upperSymbol.match(/^([A-Z]{2,5})(USD|USDT|USDC)$/)
+  if (match) return `${match[1]}/${match[2]}`
+  return symbol
 }
 
 function getVerdictColor(verdict: string): string {
@@ -441,7 +466,9 @@ export default function App() {
                                 position="right"
                                 content={
                                   <TooltipContent
-                                    title={pos.symbol}
+                                    title={isCryptoSymbol(pos.symbol, config?.crypto_symbols)
+                                      ? `${formatCryptoSymbol(pos.symbol, config?.crypto_symbols)} - CRYPTO`
+                                      : pos.symbol}
                                     items={[
                                       { label: 'Entry Price', value: posEntry ? formatCurrency(posEntry.entry_price) : 'N/A' },
                                       { label: 'Current Price', value: formatCurrency(pos.current_price) },
@@ -461,7 +488,9 @@ export default function App() {
                                   {isCryptoSymbol(pos.symbol, config?.crypto_symbols) && (
                                     <span className="text-hud-warning mr-1">₿</span>
                                   )}
-                                  {pos.symbol}
+                                  {isCryptoSymbol(pos.symbol, config?.crypto_symbols) 
+                                    ? formatCryptoSymbol(pos.symbol, config?.crypto_symbols)
+                                    : pos.symbol}
                                 </span>
                               </Tooltip>
                             </td>

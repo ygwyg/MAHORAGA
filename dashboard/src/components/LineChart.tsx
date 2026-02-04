@@ -62,7 +62,7 @@ export function LineChart({
 
   const viewBoxWidth = 800
   const viewBoxHeight = height || 200
-  const padding = { top: 16, right: 16, bottom: 24, left: 48 }
+  const padding = { top: 16, right: 4, bottom: 24, left: 48 }
   const chartWidth = viewBoxWidth - padding.left - padding.right
   const chartHeight = viewBoxHeight - padding.top - padding.bottom
 
@@ -112,7 +112,7 @@ export function LineChart({
       width="100%"
       height="100%"
       viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio="none"
       className="block"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
