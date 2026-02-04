@@ -75,7 +75,10 @@ function formatCryptoSymbol(symbol: string, cryptoSymbols: string[] = []): strin
     const baseSymbol = cs.split('/')[0].toUpperCase()
     if (upperSymbol.startsWith(baseSymbol)) {
       const quote = upperSymbol.slice(baseSymbol.length)
-      if (quote.length >= 3) return `${baseSymbol}/${quote}`
+      if (quote.length >= 3 && ['USD', 'USDT', 'USDC'].includes(quote)) {
+        return `${baseSymbol}/${quote}`
+      }
+    }
     }
   }
   const match = upperSymbol.match(/^([A-Z]{2,5})(USD|USDT|USDC)$/)
