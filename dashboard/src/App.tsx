@@ -261,8 +261,8 @@ export default function App() {
     portfolioHistory.forEach((s, i) => {
       const date = new Date(s.timestamp);
       const parts = formatter.formatToParts(date);
-      const etHours = parseInt(parts.find((p) => p.type === "hour")?.value || "0");
-      const etMinutes = parseInt(parts.find((p) => p.type === "minute")?.value || "0");
+      const etHours = parseInt(parts.find((p) => p.type === "hour")?.value || "0", 10);
+      const etMinutes = parseInt(parts.find((p) => p.type === "minute")?.value || "0", 10);
 
       if (etHours === 9 && etMinutes >= 30 && etMinutes < 45 && openIndex === -1) {
         openIndex = i;
@@ -318,6 +318,9 @@ export default function App() {
                   className="text-left bg-hud-panel p-4 border border-hud-line"
                   onSubmit={(e) => {
                     e.preventDefault();
+                    const formData = new FormData(e.target as HTMLFormElement);
+                    const token = formData.get("api-token") as string;
+                    localStorage.setItem("mahoraga_api_token", token);
                     window.location.reload();
                   }}
                 >
@@ -326,11 +329,11 @@ export default function App() {
                   </label>
                   <input
                     id="api-token"
+                    name="api-token"
                     type="password"
                     className="hud-input w-full mb-2"
                     placeholder="Enter MAHORAGA_API_TOKEN"
                     defaultValue={localStorage.getItem("mahoraga_api_token") || ""}
-                    onChange={(e) => localStorage.setItem("mahoraga_api_token", e.target.value)}
                   />
                   <button type="submit" className="hud-button w-full">
                     Save & Reload
