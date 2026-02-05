@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { AgentConfigSchema, safeValidateAgentConfig, validateAgentConfig } from "./agent-config";
+import { AgentConfig, AgentConfigSchema, safeValidateAgentConfig, validateAgentConfig } from "./agent-config";
 
-function createValidConfig() {
+function createValidConfig(): AgentConfig {
   return {
     data_poll_interval_ms: 30000,
     analyst_interval_ms: 120000,
@@ -22,6 +22,9 @@ function createValidConfig() {
     llm_provider: "openai-raw" as const,
     llm_model: "gpt-4o-mini",
     llm_analyst_model: "gpt-4o",
+    llm_min_hold_minutes: 30,
+    allowed_exchanges: ["NASDAQ", "NYSE"],
+    starting_equity: 100000,
     options_enabled: false,
     options_min_confidence: 0.8,
     options_max_pct_per_trade: 0.02,

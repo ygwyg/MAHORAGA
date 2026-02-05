@@ -40,6 +40,7 @@ import type { Env } from "../env.d";
 import { createAlpacaProviders } from "../providers/alpaca";
 import { createLLMProvider } from "../providers/llm/factory";
 import type { Account, LLMProvider, MarketClock, Position } from "../providers/types";
+import type { AgentConfig } from "../schemas/agent-config";
 
 // ============================================================================
 // SECTION 1: TYPES & CONFIGURATION
@@ -47,64 +48,6 @@ import type { Account, LLMProvider, MarketClock, Position } from "../providers/t
 // [CUSTOMIZABLE] Modify these interfaces to add new fields for custom data sources.
 // [CUSTOMIZABLE] AgentConfig contains ALL tunable parameters - start here!
 // ============================================================================
-
-interface AgentConfig {
-  // Polling intervals - how often the agent checks for new data
-  data_poll_interval_ms: number; // [TUNE] Default: 30s. Lower = more API calls
-  analyst_interval_ms: number; // [TUNE] Default: 120s. How often to run trading logic
-
-  // Position limits - risk management basics
-  max_position_value: number; // [TUNE] Max $ per position
-  max_positions: number; // [TUNE] Max concurrent positions
-  min_sentiment_score: number; // [TUNE] Min sentiment to consider buying (0-1)
-  min_analyst_confidence: number; // [TUNE] Min LLM confidence to execute (0-1)
-
-  // Risk management - take profit and stop loss
-  take_profit_pct: number; // [TUNE] Take profit at this % gain
-  stop_loss_pct: number; // [TUNE] Stop loss at this % loss
-  position_size_pct_of_cash: number; // [TUNE] % of cash per trade
-
-  // Stale position management - exit positions that have lost momentum
-  stale_position_enabled: boolean;
-  stale_min_hold_hours: number; // [TUNE] Min hours before checking staleness
-  stale_max_hold_days: number; // [TUNE] Force exit after this many days
-  stale_min_gain_pct: number; // [TUNE] Required gain % to hold past max days
-  stale_mid_hold_days: number;
-  stale_mid_min_gain_pct: number;
-  stale_social_volume_decay: number; // [TUNE] Exit if volume drops to this % of entry
-
-  // LLM configuration
-  llm_provider: "openai-raw" | "ai-sdk" | "cloudflare-gateway"; // [TUNE] Provider: openai-raw, ai-sdk, cloudflare-gateway
-  llm_model: string; // [TUNE] Model for quick research (gpt-4o-mini)
-  llm_analyst_model: string; // [TUNE] Model for deep analysis (gpt-4o)
-  llm_min_hold_minutes: number; // [TUNE] Min minutes before LLM can recommend sell (default: 30)
-
-  // Options trading - trade options instead of shares for high-conviction plays
-  options_enabled: boolean; // [TOGGLE] Enable/disable options trading
-  options_min_confidence: number; // [TUNE] Higher threshold for options (riskier)
-  options_max_pct_per_trade: number;
-  options_min_dte: number; // [TUNE] Minimum days to expiration
-  options_max_dte: number; // [TUNE] Maximum days to expiration
-  options_target_delta: number; // [TUNE] Target delta (0.3-0.5 typical)
-  options_min_delta: number;
-  options_max_delta: number;
-  options_stop_loss_pct: number; // [TUNE] Options stop loss (wider than stocks)
-  options_take_profit_pct: number; // [TUNE] Options take profit (higher targets)
-
-  // Crypto trading - 24/7 momentum-based crypto trading
-  crypto_enabled: boolean; // [TOGGLE] Enable/disable crypto trading
-  crypto_symbols: string[]; // [TUNE] Which cryptos to trade (BTC/USD, etc.)
-  crypto_momentum_threshold: number; // [TUNE] Min % move to trigger signal
-  crypto_max_position_value: number;
-  crypto_take_profit_pct: number;
-  crypto_stop_loss_pct: number;
-
-  // Custom ticker blacklist - user-defined symbols to never trade (e.g., insider trading restrictions)
-  ticker_blacklist: string[];
-
-  // Allowed exchanges - only trade stocks listed on these exchanges (avoids OTC data issues)
-  allowed_exchanges: string[];
-}
 
 // [CUSTOMIZABLE] Add fields here when you add new data sources
 interface Signal {
@@ -296,6 +239,7 @@ const DEFAULT_CONFIG: AgentConfig = {
   crypto_stop_loss_pct: 5,
   ticker_blacklist: [],
   allowed_exchanges: ["NYSE", "NASDAQ", "ARCA", "AMEX", "BATS"],
+  starting_equity: 100000,
 };
 
 const DEFAULT_STATE: AgentState = {
