@@ -148,6 +148,12 @@ interface SocialHistoryEntry {
   sentiment: number;
 }
 
+interface SocialSnapshotCacheEntry {
+  volume: number;
+  sentiment: number;
+  sources: string[];
+}
+
 interface LogEntry {
   timestamp: string;
   agent: string;
@@ -201,6 +207,11 @@ interface AgentState {
   signalCache: Signal[];
   positionEntries: Record<string, PositionEntry>;
   socialHistory: Record<string, SocialHistoryEntry[]>;
+  // Cached aggregated social snapshot from the *full gathered* signal set (age-filtered, but not capped/sorted).
+  // Needed because `signalCache` is intentionally capped (and sorted by abs(sentiment)) which can drop
+  // otherwise-relevant symbols and incorrectly treat their current social volume as 0.
+  socialSnapshotCache: Record<string, SocialSnapshotCacheEntry>;
+  socialSnapshotCacheUpdatedAt: number;
   logs: LogEntry[];
   costTracker: CostTracker;
   lastDataGatherRun: number;
@@ -303,6 +314,8 @@ const DEFAULT_STATE: AgentState = {
   signalCache: [],
   positionEntries: {},
   socialHistory: {},
+  socialSnapshotCache: {},
+  socialSnapshotCacheUpdatedAt: 0,
   logs: [],
   costTracker: { total_usd: 0, calls: 0, tokens_in: 0, tokens_out: 0 },
   lastDataGatherRun: 0,
@@ -1253,13 +1266,28 @@ export class MahoragaHarness extends DurableObject<Env> {
     const MAX_AGE_MS = 24 * 60 * 60 * 1000;
     const now = Date.now();
 
-    const freshSignals = allSignals
-      .filter((s) => now - s.timestamp < MAX_AGE_MS)
+    const eligibleSignals = allSignals.filter((s) => now - s.timestamp < MAX_AGE_MS);
+
+    // Build staleness/entry metrics from the full eligible set before capping signals.
+    // This avoids "social volume == 0" for symbols that were gathered but filtered out by the cap.
+    const socialSnapshot = this.buildSocialSnapshot(eligibleSignals);
+    this.updateSocialHistoryFromSnapshot(socialSnapshot, now);
+    this.state.socialSnapshotCache = {};
+    for (const [symbol, s] of socialSnapshot) {
+      this.state.socialSnapshotCache[symbol] = {
+        volume: s.volume,
+        sentiment: s.sentiment,
+        sources: Array.from(s.sources),
+      };
+    }
+    this.state.socialSnapshotCacheUpdatedAt = now;
+
+    const freshSignals = eligibleSignals
+      .slice()
       .sort((a, b) => Math.abs(b.sentiment) - Math.abs(a.sentiment))
       .slice(0, MAX_SIGNALS);
 
     this.state.signalCache = freshSignals;
-    this.updateSocialHistoryFromSignals(freshSignals, now);
 
     this.log("System", "data_gathered", {
       stocktwits: stocktwitsSignals.length,
@@ -1270,9 +1298,7 @@ export class MahoragaHarness extends DurableObject<Env> {
     });
   }
 
-  private buildSocialSnapshot(
-    signals: Signal[]
-  ): Map<
+  private buildSocialSnapshot(signals: Signal[]): Map<
     string,
     {
       volume: number;
@@ -1306,12 +1332,28 @@ export class MahoragaHarness extends DurableObject<Env> {
     return out;
   }
 
-  private updateSocialHistoryFromSignals(signals: Signal[], nowMs: number): void {
+  private pruneSocialHistoryInPlace(history: SocialHistoryEntry[], cutoffMs: number): void {
+    if (history.length === 0) return;
+    let pruneCount = 0;
+    while (pruneCount < history.length && history[pruneCount]!.timestamp < cutoffMs) {
+      pruneCount++;
+    }
+    if (pruneCount > 0) {
+      history.splice(0, pruneCount);
+    }
+  }
+
+  private updateSocialHistoryFromSnapshot(
+    snapshot: Map<string, { volume: number; sentiment: number; sources: Set<string> }>,
+    nowMs: number
+  ): void {
     const SOCIAL_HISTORY_BUCKET_MS = 5 * 60 * 1000;
     const SOCIAL_HISTORY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+    const cutoff = nowMs - SOCIAL_HISTORY_MAX_AGE_MS;
 
-    const snapshot = this.buildSocialSnapshot(signals);
+    const touchedSymbols = new Set<string>();
     for (const [symbol, s] of snapshot) {
+      touchedSymbols.add(symbol);
       const history = this.state.socialHistory[symbol] ?? [];
       const last = history[history.length - 1];
 
@@ -1323,13 +1365,44 @@ export class MahoragaHarness extends DurableObject<Env> {
         history.push({ timestamp: nowMs, volume: s.volume, sentiment: s.sentiment });
       }
 
-      const cutoff = nowMs - SOCIAL_HISTORY_MAX_AGE_MS;
-      while (history.length > 0 && history[0]!.timestamp < cutoff) {
-        history.shift();
+      this.pruneSocialHistoryInPlace(history, cutoff);
+      if (history.length === 0) {
+        delete this.state.socialHistory[symbol];
+      } else {
+        this.state.socialHistory[symbol] = history;
       }
-
-      this.state.socialHistory[symbol] = history;
     }
+
+    // Also prune stale histories for symbols that are missing from the latest snapshot,
+    // otherwise durable-object state can grow without bound over time.
+    for (const symbol of Object.keys(this.state.socialHistory)) {
+      if (touchedSymbols.has(symbol)) continue;
+      const history = this.state.socialHistory[symbol];
+      if (!history || history.length === 0) {
+        delete this.state.socialHistory[symbol];
+        continue;
+      }
+      this.pruneSocialHistoryInPlace(history, cutoff);
+      if (history.length === 0) {
+        delete this.state.socialHistory[symbol];
+      }
+    }
+  }
+
+  private getSocialSnapshotCache(): Record<string, SocialSnapshotCacheEntry> {
+    // Prefer the snapshot captured during the most recent gather run. This represents the full gathered set
+    // (age-filtered, uncapped), while `signalCache` is capped and sentiment-biased for research/LLM costs.
+    if (this.state.socialSnapshotCacheUpdatedAt >= this.state.lastDataGatherRun) {
+      return this.state.socialSnapshotCache;
+    }
+
+    // Backfill for older persisted states that predate socialSnapshotCache.
+    const fallback = this.buildSocialSnapshot(this.state.signalCache);
+    const out: Record<string, SocialSnapshotCacheEntry> = {};
+    for (const [symbol, s] of fallback) {
+      out[symbol] = { volume: s.volume, sentiment: s.sentiment, sources: Array.from(s.sources) };
+    }
+    return out;
   }
 
   private async gatherStockTwits(): Promise<Signal[]> {
@@ -2656,7 +2729,7 @@ Response format:
     }
 
     const heldSymbols = new Set(positions.map((p) => p.symbol));
-    const socialSnapshot = this.buildSocialSnapshot(this.state.signalCache);
+    const socialSnapshot = this.getSocialSnapshotCache();
 
     // Check position exits
     for (const pos of positions) {
@@ -2678,7 +2751,7 @@ Response format:
 
       // Check staleness
       if (this.state.config.stale_position_enabled) {
-        const currentSocialVolume = socialSnapshot.get(pos.symbol)?.volume ?? 0;
+        const currentSocialVolume = socialSnapshot[pos.symbol]?.volume ?? 0;
         const stalenessResult = this.analyzeStaleness(pos.symbol, pos.current_price, currentSocialVolume);
         this.state.stalenessAnalysis[pos.symbol] = stalenessResult;
 
@@ -2699,7 +2772,7 @@ Response format:
         if (heldSymbols.has(research.symbol)) continue;
 
         const originalSignal = this.state.signalCache.find((s) => s.symbol === research.symbol);
-        const aggregatedSocial = socialSnapshot.get(research.symbol);
+        const aggregatedSocial = socialSnapshot[research.symbol];
         let finalConfidence = research.confidence;
 
         if (this.isTwitterEnabled() && originalSignal) {
@@ -2739,7 +2812,7 @@ Response format:
             entry_sentiment: aggregatedSocial?.sentiment ?? originalSignal?.sentiment ?? finalConfidence,
             entry_social_volume: aggregatedSocial?.volume ?? originalSignal?.volume ?? 0,
             entry_sources: aggregatedSocial
-              ? Array.from(aggregatedSocial.sources)
+              ? aggregatedSocial.sources
               : originalSignal?.subreddits || [originalSignal?.source || "research"],
             entry_reason: research.reasoning,
             peak_price: 0,
@@ -2789,7 +2862,7 @@ Response format:
           const result = await this.executeBuy(alpaca, rec.symbol, rec.confidence, account);
           if (result) {
             const originalSignal = this.state.signalCache.find((s) => s.symbol === rec.symbol);
-            const aggregatedSocial = socialSnapshot.get(rec.symbol);
+            const aggregatedSocial = socialSnapshot[rec.symbol];
             heldSymbols.add(rec.symbol);
             this.state.positionEntries[rec.symbol] = {
               symbol: rec.symbol,
@@ -2798,7 +2871,7 @@ Response format:
               entry_sentiment: aggregatedSocial?.sentiment ?? originalSignal?.sentiment ?? rec.confidence,
               entry_social_volume: aggregatedSocial?.volume ?? originalSignal?.volume ?? 0,
               entry_sources: aggregatedSocial
-                ? Array.from(aggregatedSocial.sources)
+                ? aggregatedSocial.sources
                 : originalSignal?.subreddits || [originalSignal?.source || "analyst"],
               entry_reason: rec.reasoning,
               peak_price: 0,
@@ -3307,7 +3380,7 @@ Response format:
     if (!account) return;
 
     const heldSymbols = new Set(positions.map((p) => p.symbol));
-    const socialSnapshot = this.buildSocialSnapshot(this.state.signalCache);
+    const socialSnapshot = this.getSocialSnapshotCache();
 
     this.log("System", "executing_premarket_plan", {
       recommendations: this.state.premarketPlan.recommendations.length,
@@ -3329,7 +3402,7 @@ Response format:
           heldSymbols.add(rec.symbol);
 
           const originalSignal = this.state.signalCache.find((s) => s.symbol === rec.symbol);
-          const aggregatedSocial = socialSnapshot.get(rec.symbol);
+          const aggregatedSocial = socialSnapshot[rec.symbol];
           this.state.positionEntries[rec.symbol] = {
             symbol: rec.symbol,
             entry_time: Date.now(),
@@ -3337,7 +3410,7 @@ Response format:
             entry_sentiment: aggregatedSocial?.sentiment ?? originalSignal?.sentiment ?? 0,
             entry_social_volume: aggregatedSocial?.volume ?? originalSignal?.volume ?? 0,
             entry_sources: aggregatedSocial
-              ? Array.from(aggregatedSocial.sources)
+              ? aggregatedSocial.sources
               : originalSignal?.subreddits || [originalSignal?.source || "premarket"],
             entry_reason: rec.reasoning,
             peak_price: 0,
