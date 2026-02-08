@@ -225,6 +225,7 @@
       </table>
 
       <h2>Timing Parameters</h2>
+      <p>Market timing uses the Alpaca clock (<code>next_open</code>, <code>is_open</code>) so it stays correct across timezones and holidays.</p>
       <table>
         <tr>
           <th>Setting</th>
@@ -240,6 +241,16 @@
           <td><code>analyst_interval_ms</code></td>
           <td>120000</td>
           <td>How often to run trading logic (2min)</td>
+        </tr>
+        <tr>
+          <td><code>premarket_plan_window_minutes</code></td>
+          <td>5</td>
+          <td>Generate a pre-market plan when within N minutes of <code>next_open</code></td>
+        </tr>
+        <tr>
+          <td><code>market_open_execute_window_minutes</code></td>
+          <td>2</td>
+          <td>Execute the pre-market plan if the market is open and within this window after open</td>
         </tr>
       </table>
 

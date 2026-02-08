@@ -53,6 +53,8 @@ export interface CostTracker {
 export interface Config {
   data_poll_interval_ms: number
   analyst_interval_ms: number
+  premarket_plan_window_minutes?: number
+  market_open_execute_window_minutes?: number
   max_position_value: number
   max_positions: number
   min_sentiment_score: number

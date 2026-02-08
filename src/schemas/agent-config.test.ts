@@ -5,6 +5,8 @@ function createValidConfig() {
   return {
     data_poll_interval_ms: 30000,
     analyst_interval_ms: 120000,
+    premarket_plan_window_minutes: 5,
+    market_open_execute_window_minutes: 2,
     max_position_value: 5000,
     max_positions: 5,
     min_sentiment_score: 0.3,

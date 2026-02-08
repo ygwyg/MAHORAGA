@@ -181,6 +181,30 @@ export function SettingsModal({ config, onSave, onClose }: SettingsModalProps) {
                   onChange={e => handleChange('analyst_interval_ms', Number(e.target.value))}
                 />
               </div>
+              <div>
+                <label className="hud-label block mb-1">Pre-Market Plan Window (min)</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  className="hud-input w-full"
+                  value={localConfig.premarket_plan_window_minutes ?? 5}
+                  onChange={e => handleChange('premarket_plan_window_minutes', Number(e.target.value))}
+                />
+                <p className="text-[9px] text-hud-text-dim mt-1">Generate a plan when within N minutes of the next market open.</p>
+              </div>
+              <div>
+                <label className="hud-label block mb-1">Market Open Execute Window (min)</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  className="hud-input w-full"
+                  value={localConfig.market_open_execute_window_minutes ?? 2}
+                  onChange={e => handleChange('market_open_execute_window_minutes', Number(e.target.value))}
+                />
+                <p className="text-[9px] text-hud-text-dim mt-1">Execute the plan if the market is open and within this window.</p>
+              </div>
             </div>
           </div>
 
