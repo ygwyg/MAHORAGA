@@ -851,7 +851,8 @@ export class MahoragaHarness extends DurableObject<Env> {
     this.ctx.blockConcurrencyWhile(async () => {
       const stored = await this.ctx.storage.get<AgentState>("state");
       if (stored) {
-        this.state = { ...DEFAULT_STATE, ...stored, config: { ...DEFAULT_STATE.config, ...(stored.config || {}) } };
+        this.state = { ...DEFAULT_STATE, ...stored };
+        this.state.config = { ...DEFAULT_STATE.config, ...this.state.config };
       }
       this.initializeLLM();
 
@@ -889,7 +890,7 @@ export class MahoragaHarness extends DurableObject<Env> {
     // Cloudflare Workers typically run in UTC; explicitly use US/Eastern for market-day boundaries.
     if (!this._etDayFormatter) {
       try {
-        this._etDayFormatter = new Intl.DateTimeFormat("en-CA", {
+        this._etDayFormatter = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/New_York",
           year: "numeric",
           month: "2-digit",
@@ -903,7 +904,17 @@ export class MahoragaHarness extends DurableObject<Env> {
     if (!this._etDayFormatter) {
       return new Date(epochMs).toISOString().slice(0, 10);
     }
-    return this._etDayFormatter.format(new Date(epochMs));
+
+    try {
+      const parts = this._etDayFormatter.formatToParts(new Date(epochMs));
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      if (year && month && day) return `${year}-${month}-${day}`;
+    } catch {
+      // fall through
+    }
+    return new Date(epochMs).toISOString().slice(0, 10);
   }
 
   // ============================================================================
@@ -924,8 +935,8 @@ export class MahoragaHarness extends DurableObject<Env> {
     const now = Date.now();
     const RESEARCH_INTERVAL_MS = 120_000;
     const POSITION_RESEARCH_INTERVAL_MS = 300_000;
-    const premarketPlanWindowMinutes = this.state.config.premarket_plan_window_minutes ?? 5;
-    const marketOpenExecuteWindowMinutes = this.state.config.market_open_execute_window_minutes ?? 2;
+    const premarketPlanWindowMinutes = Math.max(1, this.state.config.premarket_plan_window_minutes ?? 5);
+    const marketOpenExecuteWindowMinutes = Math.max(0, this.state.config.market_open_execute_window_minutes ?? 2);
 
     try {
       const alpaca = createAlpacaProviders(this.env);
@@ -933,8 +944,9 @@ export class MahoragaHarness extends DurableObject<Env> {
       const clockNowMs = Number.isFinite(new Date(clock.timestamp).getTime()) ? new Date(clock.timestamp).getTime() : now;
       const etDay = this.getEtDayString(clockNowMs);
       const nextOpenMs = new Date(clock.next_open).getTime();
+      const nextOpenValid = Number.isFinite(nextOpenMs);
 
-      if (!clock.is_open && Number.isFinite(nextOpenMs)) {
+      if (!clock.is_open && nextOpenValid) {
         this.state.lastKnownNextOpenMs = nextOpenMs;
       }
 
@@ -949,7 +961,7 @@ export class MahoragaHarness extends DurableObject<Env> {
       }
 
       if (!clock.is_open && !this.state.premarketPlan) {
-        const minutesToOpen = Number.isFinite(nextOpenMs) ? (nextOpenMs - clockNowMs) / 60000 : Number.POSITIVE_INFINITY;
+        const minutesToOpen = nextOpenValid ? (nextOpenMs - clockNowMs) / 60000 : Number.POSITIVE_INFINITY;
         const shouldPlan =
           minutesToOpen > 0 &&
           minutesToOpen <= premarketPlanWindowMinutes &&
@@ -973,7 +985,6 @@ export class MahoragaHarness extends DurableObject<Env> {
         const openWindowMs = marketOpenExecuteWindowMinutes * 60_000;
         const withinOpenWindow =
           hasOpenMs &&
-          openWindowMs >= 0 &&
           clockNowMs >= lastKnownOpenMs &&
           clockNowMs - lastKnownOpenMs <= openWindowMs;
         const clockStateUnknown = this.state.lastClockIsOpen == null;
