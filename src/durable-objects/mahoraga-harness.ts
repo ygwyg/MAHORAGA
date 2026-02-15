@@ -249,6 +249,18 @@ export class MahoragaHarness extends DurableObject<Env> {
       // Positions snapshot
       const positions = await ctx.broker.getPositions();
 
+      // Backfill entry_price and update peak_price every tick
+      for (const pos of positions) {
+        const entry = this.state.positionEntries[pos.symbol];
+        if (!entry) continue;
+        if (entry.entry_price === 0 && pos.avg_entry_price > 0) {
+          entry.entry_price = pos.avg_entry_price;
+        }
+        if (entry.entry_price > 0) {
+          entry.peak_price = Math.max(entry.peak_price, pos.current_price);
+        }
+      }
+
       // Crypto trading (24/7)
       if (this.state.config.crypto_enabled) {
         await runCryptoTrading(ctx, positions);
@@ -1153,8 +1165,11 @@ export class MahoragaHarness extends DurableObject<Env> {
 
       for (const pos of positions || []) {
         const entry = this.state.positionEntries[pos.symbol];
-        if (entry && entry.entry_price === 0 && pos.avg_entry_price) {
+        if (!entry) continue;
+        if (entry.entry_price === 0 && pos.avg_entry_price > 0) {
           entry.entry_price = pos.avg_entry_price;
+        }
+        if (entry.entry_price > 0) {
           entry.peak_price = Math.max(entry.peak_price, pos.current_price);
         }
       }

@@ -20,8 +20,8 @@ Derived from `CODE-REVIEW.md` changes 1-3. Each task is atomic and independently
   Add `continue` after `executeOptionsOrder()` in `runAnalyst` options branch (`mahoraga-harness.ts:786-795`). Prevents equity buy firing for same signal.
   Files: `src/durable-objects/mahoraga-harness.ts`
 
-- [ ] **Update peak_price every tick**
-  After fetching positions in alarm loop, update `positionEntries[symbol].peak_price` via `Math.max`. Also defensively backfill `entry_price` from `pos.avg_entry_price` when still 0.
+- [x] **Update peak_price every tick**
+  After fetching positions in alarm loop, update `positionEntries[symbol].peak_price` via `Math.max`. Also defensively backfill `entry_price` from `pos.avg_entry_price` when still 0. Also fixed status handler to use same improved logic.
   Files: `src/durable-objects/mahoraga-harness.ts`
 
 - [ ] **Add order lifecycle reconciliation**
