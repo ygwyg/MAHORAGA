@@ -379,6 +379,7 @@ export class MahoragaHarness extends DurableObject<Env> {
     const alpaca = createAlpacaProviders(this.env);
     const db = createD1Client(this.env.DB);
     const STALE_ORDER_MS = 10 * 60 * 1000;
+    const MAX_POLL_FAILURES = 5;
     const now = Date.now();
 
     for (const [orderId, pending] of Object.entries(this.state.pendingOrders)) {
@@ -467,11 +468,24 @@ export class MahoragaHarness extends DurableObject<Env> {
 
         // Still active — leave in pendingOrders for next tick
       } catch (error) {
-        this.log("Reconcile", "order_poll_error", {
-          symbol: pending.symbol,
-          orderId,
-          error: String(error),
-        });
+        const failures = (pending.pollFailures ?? 0) + 1;
+        if (failures >= MAX_POLL_FAILURES) {
+          this.log("Reconcile", "order_poll_abandoned", {
+            symbol: pending.symbol,
+            orderId,
+            failures,
+            error: String(error),
+          });
+          delete this.state.pendingOrders[orderId];
+        } else {
+          pending.pollFailures = failures;
+          this.log("Reconcile", "order_poll_error", {
+            symbol: pending.symbol,
+            orderId,
+            failures,
+            error: String(error),
+          });
+        }
       }
     }
   }

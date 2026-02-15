@@ -78,6 +78,8 @@ export interface PendingBuyOrder {
   notional: number;
   reason: string;
   submittedAt: number;
+  /** Consecutive getOrder() failures. Cleaned up at MAX_POLL_FAILURES. */
+  pollFailures?: number;
   /** Metadata to populate PositionEntry on fill */
   entryMeta: {
     sentiment: number;
@@ -93,6 +95,8 @@ export interface PendingSellOrder {
   symbol: string;
   reason: string;
   submittedAt: number;
+  /** Consecutive getOrder() failures. Cleaned up at MAX_POLL_FAILURES. */
+  pollFailures?: number;
   /** Snapshot of entry price from PositionEntry for P&L computation on fill. */
   entryPrice: number;
 }
