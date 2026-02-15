@@ -33,7 +33,7 @@ export interface PolicyBrokerDeps {
   /** Called after a successful buy order */
   onBuy?: (symbol: string, notional: number) => void;
   /** Called after a sell order is submitted. Returns the order ID for reconciliation tracking. */
-  onSell?: (symbol: string, reason: string, orderId: string, entryPrice: number) => void;
+  onSell?: (symbol: string, reason: string, orderId: string, entryPrice: number | null) => void;
 }
 
 /**
@@ -220,7 +220,14 @@ export function createPolicyBroker(deps: PolicyBrokerDeps): StrategyContext["bro
       // Snapshot entry price BEFORE close for P&L computation in reconciliation
       const positionsBeforeClose = await getPositions();
       const closingPosition = positionsBeforeClose.find((p) => p.symbol === symbol);
-      const entryPrice = closingPosition?.avg_entry_price ?? 0;
+      const entryPrice = closingPosition?.avg_entry_price ?? null;
+      if (entryPrice === null) {
+        log("PolicyBroker", "sell_entry_price_unknown", {
+          symbol,
+          reason,
+          note: "Position not found in broker — P&L will be skipped for this sell",
+        });
+      }
 
       const order = await alpaca.trading.closePosition(symbol);
       log("PolicyBroker", "sell_executed", { symbol, reason, orderId: order.id });

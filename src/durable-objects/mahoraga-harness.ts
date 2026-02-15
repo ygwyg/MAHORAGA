@@ -433,7 +433,18 @@ export class MahoragaHarness extends DurableObject<Env> {
             });
           } else {
             // Sell filled — compute realized P&L from fill price vs entry price
-            const realizedPl = pending.entryPrice > 0 && filledPrice > 0 ? filledPrice - pending.entryPrice : 0;
+            if (pending.entryPrice === null) {
+              this.log("Reconcile", "sell_filled_no_entry_price", {
+                symbol: pending.symbol,
+                orderId,
+                filledPrice,
+                note: "Skipping P&L — entry price unknown",
+              });
+            }
+            const realizedPl =
+              pending.entryPrice !== null && pending.entryPrice > 0 && filledPrice > 0
+                ? filledPrice - pending.entryPrice
+                : 0;
 
             if (realizedPl < 0 && db) {
               const filledQty = parseFloat(order.filled_qty ?? "");

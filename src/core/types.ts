@@ -97,8 +97,8 @@ export interface PendingSellOrder {
   submittedAt: number;
   /** Consecutive getOrder() failures. Cleaned up at MAX_POLL_FAILURES. */
   pollFailures?: number;
-  /** Snapshot of entry price from PositionEntry for P&L computation on fill. */
-  entryPrice: number;
+  /** Snapshot of entry price from PositionEntry for P&L computation on fill. null if position was not found at sell time. */
+  entryPrice: number | null;
 }
 
 export type PendingOrder = PendingBuyOrder | PendingSellOrder;
