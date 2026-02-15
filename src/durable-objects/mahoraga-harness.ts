@@ -783,12 +783,13 @@ export class MahoragaHarness extends DurableObject<Env> {
 
       if (finalConfidence < this.state.config.min_analyst_confidence) continue;
 
-      // Options routing
+      // Options routing — skip equity buy when options order fires
       if (entry.useOptions) {
         const contract = await findBestOptionsContract(ctx, entry.symbol, "bullish", account.equity);
         if (contract) {
           await this.executeOptionsOrder(contract, 1, account.equity);
         }
+        continue;
       }
 
       // Execute buy via policy broker

@@ -1,0 +1,15 @@
+{
+  // Ralph Auto Loop configuration
+  "specsDir": "specs",
+  "model": "anthropic/claude-opus-4-6",
+  "variant": "code",
+  "commitPrefix": "ralph",
+  "checks": [
+    { "name": "Typecheck", "command": "npm run typecheck" },
+    { "name": "Lint", "command": "npm run lint" },
+    { "name": "Test", "command": "npm run test:run" }
+  ],
+  "commands": [
+    { "name": "Fix lint issues", "command": "npm run check:fix" }
+  ]
+}
