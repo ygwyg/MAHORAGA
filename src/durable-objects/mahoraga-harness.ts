@@ -158,7 +158,9 @@ export class MahoragaHarness extends DurableObject<Env> {
       getLocalEntryPrice: (symbol) => self.state.positionEntries[symbol]?.entry_price ?? null,
       onSell: (symbol, _reason, orderId, entryPrice) => {
         // Store pending sell for P&L computation in reconcileOrders() on fill.
-        // Clean up local state immediately — position is being closed.
+        // positionEntries/socialHistory/stalenessAnalysis cleanup is deferred
+        // to reconcileOrders() when fill is confirmed, so that if the sell
+        // order is canceled/expired/rejected the local tracking survives.
         self.state.pendingOrders[orderId] = {
           side: "sell",
           orderId,
@@ -167,10 +169,6 @@ export class MahoragaHarness extends DurableObject<Env> {
           submittedAt: Date.now(),
           entryPrice,
         };
-
-        delete self.state.positionEntries[symbol];
-        delete self.state.socialHistory[symbol];
-        delete self.state.stalenessAnalysis[symbol];
       },
     });
 
@@ -397,6 +395,11 @@ export class MahoragaHarness extends DurableObject<Env> {
           side: pending.side,
           ageMs: now - pending.submittedAt,
         });
+        try {
+          await alpaca.trading.cancelOrder(pending.orderId);
+        } catch {
+          // Order may already be terminal — safe to ignore
+        }
         delete this.state.pendingOrders[orderId];
         continue;
       }
@@ -434,9 +437,10 @@ export class MahoragaHarness extends DurableObject<Env> {
           if (pending.side === "buy") {
             // Buy filled — create PositionEntry keyed by underlying for options, symbol for equities
             const entryKey = pending.underlying ?? pending.symbol;
+            const filledAtMs = order.filled_at ? new Date(order.filled_at).getTime() : NaN;
             this.state.positionEntries[entryKey] = {
               symbol: entryKey,
-              entry_time: pending.submittedAt,
+              entry_time: Number.isFinite(filledAtMs) ? filledAtMs : pending.submittedAt,
               entry_price: filledPrice,
               entry_sentiment: pending.entryMeta.sentiment,
               entry_social_volume: pending.entryMeta.socialVolume,
@@ -477,14 +481,16 @@ export class MahoragaHarness extends DurableObject<Env> {
 
             if (realizedPl < 0 && db) {
               const filledQty = parseFloat(order.filled_qty ?? "");
-              if (!Number.isFinite(filledQty) || filledQty <= 0) {
+              if (!Number.isFinite(filledQty) || filledQty <= 0 || !Number.isFinite(realizedPl)) {
                 this.log("Reconcile", "sell_filled_qty_invalid", {
                   symbol: pending.symbol,
                   orderId,
                   filledQty: order.filled_qty,
                 });
               } else {
-                const lossUsd = Math.abs(realizedPl) * filledQty;
+                // Alpaca quotes options per share; each contract = 100 shares
+                const contractMultiplier = order.asset_class === "us_option" ? 100 : 1;
+                const lossUsd = Math.abs(realizedPl) * filledQty * contractMultiplier;
                 if (lossUsd > 0) {
                   await recordDailyLoss(db, lossUsd);
                   const cooldownMinutes = this.state.config.cooldown_minutes_after_loss ?? 15;
@@ -510,6 +516,11 @@ export class MahoragaHarness extends DurableObject<Env> {
               entryPrice: pending.entryPrice,
               realizedPl,
             });
+
+            // Clean up local tracking now that close is confirmed
+            delete this.state.positionEntries[pending.symbol];
+            delete this.state.socialHistory[pending.symbol];
+            delete this.state.stalenessAnalysis[pending.symbol];
           }
 
           delete this.state.pendingOrders[orderId];

@@ -265,6 +265,14 @@ export function createPolicyBroker(deps: PolicyBrokerDeps): StrategyContext["bro
       });
       return null;
     }
+    if (!Number.isFinite(contract.mid_price) || contract.mid_price <= 0) {
+      log("PolicyBroker", "buy_option_blocked", {
+        symbol: contract.symbol,
+        reason: "Invalid mid_price",
+        mid_price: contract.mid_price,
+      });
+      return null;
+    }
 
     const dte = getDTE(contract.expiration);
     const estimatedCost = contract.mid_price * qty * 100;
