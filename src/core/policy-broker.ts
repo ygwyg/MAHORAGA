@@ -32,8 +32,8 @@ export interface PolicyBrokerDeps {
   allowedExchanges: string[];
   /** Called after a successful buy order */
   onBuy?: (symbol: string, notional: number) => void;
-  /** Called after a successful sell/close order. Position is the snapshot before close. */
-  onSell?: (symbol: string, reason: string, closingPosition: Position | null) => Promise<void>;
+  /** Called after a sell order is submitted. Returns the order ID for reconciliation tracking. */
+  onSell?: (symbol: string, reason: string, orderId: string, entryPrice: number) => void;
 }
 
 /**
@@ -190,15 +190,15 @@ export function createPolicyBroker(deps: PolicyBrokerDeps): StrategyContext["bro
     }
   }
 
-  async function sell(symbol: string, reason: string): Promise<boolean> {
+  async function sell(symbol: string, reason: string): Promise<{ orderId: string } | null> {
     if (!symbol || symbol.trim().length === 0) {
       log("PolicyBroker", "sell_blocked", { reason: "Empty symbol" });
-      return false;
+      return null;
     }
 
     if (!reason || reason.trim().length === 0) {
       log("PolicyBroker", "sell_blocked", { symbol, reason: "No sell reason provided" });
-      return false;
+      return null;
     }
 
     // For sells (closing positions), we skip full PolicyEngine evaluation.
@@ -217,23 +217,24 @@ export function createPolicyBroker(deps: PolicyBrokerDeps): StrategyContext["bro
         }
       }
 
-      // Snapshot position data BEFORE close for P&L tracking
+      // Snapshot entry price BEFORE close for P&L computation in reconciliation
       const positionsBeforeClose = await getPositions();
       const closingPosition = positionsBeforeClose.find((p) => p.symbol === symbol);
+      const entryPrice = closingPosition?.avg_entry_price ?? 0;
 
-      await alpaca.trading.closePosition(symbol);
-      log("PolicyBroker", "sell_executed", { symbol, reason });
+      const order = await alpaca.trading.closePosition(symbol);
+      log("PolicyBroker", "sell_executed", { symbol, reason, orderId: order.id });
 
-      await deps.onSell?.(symbol, reason, closingPosition ?? null);
+      deps.onSell?.(symbol, reason, order.id, entryPrice);
 
       // Invalidate cache after order + callback
       cachedAccount = null;
       cachedPositions = null;
 
-      return true;
+      return { orderId: order.id };
     } catch (error) {
       log("PolicyBroker", "sell_failed", { symbol, error: String(error) });
-      return false;
+      return null;
     }
   }
 

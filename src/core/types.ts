@@ -70,7 +70,9 @@ export const TERMINAL_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set<OrderSt
   "suspended",
 ]);
 
-export interface PendingOrder {
+/** Pending buy order — awaiting fill to create PositionEntry. */
+export interface PendingBuyOrder {
+  side: "buy";
   orderId: string;
   symbol: string;
   notional: number;
@@ -83,6 +85,19 @@ export interface PendingOrder {
     sources: string[];
   };
 }
+
+/** Pending sell order — awaiting fill to compute realized P&L. */
+export interface PendingSellOrder {
+  side: "sell";
+  orderId: string;
+  symbol: string;
+  reason: string;
+  submittedAt: number;
+  /** Snapshot of entry price from PositionEntry for P&L computation on fill. */
+  entryPrice: number;
+}
+
+export type PendingOrder = PendingBuyOrder | PendingSellOrder;
 
 // ---------------------------------------------------------------------------
 // Social history — rolling time-series for staleness detection

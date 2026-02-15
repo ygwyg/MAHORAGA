@@ -150,22 +150,17 @@ export class MahoragaHarness extends DurableObject<Env> {
       log: (agent, action, details) => self.log(agent, action, details),
       cryptoSymbols: self.state.config.crypto_symbols || [],
       allowedExchanges: self.state.config.allowed_exchanges ?? ["NYSE", "NASDAQ", "ARCA", "AMEX", "BATS"],
-      onSell: async (symbol, _reason, closingPosition) => {
-        // Read P&L before deleting local state
-        if (closingPosition && closingPosition.unrealized_pl < 0 && db) {
-          const lossUsd = Math.abs(closingPosition.unrealized_pl);
-          await recordDailyLoss(db, lossUsd);
-          const cooldownMinutes = self.state.config.cooldown_minutes_after_loss ?? 15;
-          if (cooldownMinutes > 0) {
-            const cooldownUntil = new Date(Date.now() + cooldownMinutes * 60 * 1000).toISOString();
-            await setCooldown(db, cooldownUntil);
-          }
-          self.log("PolicyBroker", "daily_loss_recorded", {
-            symbol,
-            lossUsd,
-            cooldownMinutes: self.state.config.cooldown_minutes_after_loss ?? 15,
-          });
-        }
+      onSell: (symbol, _reason, orderId, entryPrice) => {
+        // Store pending sell for P&L computation in reconcileOrders() on fill.
+        // Clean up local state immediately — position is being closed.
+        self.state.pendingOrders[symbol] = {
+          side: "sell",
+          orderId,
+          symbol,
+          reason: _reason,
+          submittedAt: Date.now(),
+          entryPrice,
+        };
 
         delete self.state.positionEntries[symbol];
         delete self.state.socialHistory[symbol];
@@ -379,6 +374,7 @@ export class MahoragaHarness extends DurableObject<Env> {
    */
   private async reconcileOrders(): Promise<void> {
     const alpaca = createAlpacaProviders(this.env);
+    const db = createD1Client(this.env.DB);
     const STALE_ORDER_MS = 10 * 60 * 1000;
     const now = Date.now();
 
@@ -388,6 +384,7 @@ export class MahoragaHarness extends DurableObject<Env> {
         this.log("Reconcile", "order_stale", {
           symbol,
           orderId: pending.orderId,
+          side: pending.side,
           ageMs: now - pending.submittedAt,
         });
         delete this.state.pendingOrders[symbol];
@@ -400,23 +397,56 @@ export class MahoragaHarness extends DurableObject<Env> {
         if (order.status === "filled") {
           const filledPrice = order.filled_avg_price ? parseFloat(order.filled_avg_price) : 0;
 
-          this.state.positionEntries[symbol] = {
-            symbol,
-            entry_time: pending.submittedAt,
-            entry_price: filledPrice,
-            entry_sentiment: pending.entryMeta.sentiment,
-            entry_social_volume: pending.entryMeta.socialVolume,
-            entry_sources: pending.entryMeta.sources,
-            entry_reason: pending.reason,
-            peak_price: filledPrice,
-            peak_sentiment: pending.entryMeta.sentiment,
-          };
+          if (pending.side === "buy") {
+            // Buy filled — create PositionEntry with real fill price
+            this.state.positionEntries[symbol] = {
+              symbol,
+              entry_time: pending.submittedAt,
+              entry_price: filledPrice,
+              entry_sentiment: pending.entryMeta.sentiment,
+              entry_social_volume: pending.entryMeta.socialVolume,
+              entry_sources: pending.entryMeta.sources,
+              entry_reason: pending.reason,
+              peak_price: filledPrice,
+              peak_sentiment: pending.entryMeta.sentiment,
+            };
 
-          this.log("Reconcile", "order_filled", {
-            symbol,
-            orderId: pending.orderId,
-            filledPrice,
-          });
+            this.log("Reconcile", "buy_filled", {
+              symbol,
+              orderId: pending.orderId,
+              filledPrice,
+            });
+          } else {
+            // Sell filled — compute realized P&L from fill price vs entry price
+            const realizedPl = pending.entryPrice > 0 && filledPrice > 0 ? filledPrice - pending.entryPrice : 0;
+
+            if (realizedPl < 0 && db) {
+              const lossUsd = Math.abs(realizedPl) * parseFloat(order.filled_qty || "0");
+              if (lossUsd > 0) {
+                await recordDailyLoss(db, lossUsd);
+                const cooldownMinutes = this.state.config.cooldown_minutes_after_loss ?? 15;
+                if (cooldownMinutes > 0) {
+                  const cooldownUntil = new Date(now + cooldownMinutes * 60 * 1000).toISOString();
+                  await setCooldown(db, cooldownUntil);
+                }
+                this.log("Reconcile", "daily_loss_recorded", {
+                  symbol,
+                  lossPerShare: realizedPl,
+                  filledQty: order.filled_qty,
+                  lossUsd,
+                  cooldownMinutes: this.state.config.cooldown_minutes_after_loss ?? 15,
+                });
+              }
+            }
+
+            this.log("Reconcile", "sell_filled", {
+              symbol,
+              orderId: pending.orderId,
+              filledPrice,
+              entryPrice: pending.entryPrice,
+              realizedPl,
+            });
+          }
 
           delete this.state.pendingOrders[symbol];
           continue;
@@ -426,6 +456,7 @@ export class MahoragaHarness extends DurableObject<Env> {
           this.log("Reconcile", "order_terminal", {
             symbol,
             orderId: pending.orderId,
+            side: pending.side,
             status: order.status,
           });
           delete this.state.pendingOrders[symbol];
@@ -905,6 +936,7 @@ export class MahoragaHarness extends DurableObject<Env> {
             const originalSignal = this.state.signalCache.find((s) => s.symbol === entry.symbol);
             const aggregatedSocial = socialSnapshot[entry.symbol];
             this.state.pendingOrders[contract.symbol] = {
+              side: "buy",
               orderId: optResult.orderId,
               symbol: contract.symbol,
               notional: contract.mid_price * 100, // 1 contract = 100 shares
@@ -930,6 +962,7 @@ export class MahoragaHarness extends DurableObject<Env> {
         const originalSignal = this.state.signalCache.find((s) => s.symbol === entry.symbol);
         const aggregatedSocial = socialSnapshot[entry.symbol];
         this.state.pendingOrders[entry.symbol] = {
+          side: "buy",
           orderId: result.orderId,
           symbol: entry.symbol,
           notional: entry.notional,
@@ -998,6 +1031,7 @@ export class MahoragaHarness extends DurableObject<Env> {
           const aggregatedSocial = socialSnapshot[rec.symbol];
           heldSymbols.add(rec.symbol);
           this.state.pendingOrders[rec.symbol] = {
+            side: "buy",
             orderId: result.orderId,
             symbol: rec.symbol,
             notional,
@@ -1107,6 +1141,7 @@ export class MahoragaHarness extends DurableObject<Env> {
           const originalSignal = this.state.signalCache.find((s) => s.symbol === rec.symbol);
           const aggregatedSocial = socialSnapshot[rec.symbol];
           this.state.pendingOrders[rec.symbol] = {
+            side: "buy",
             orderId: result.orderId,
             symbol: rec.symbol,
             notional,

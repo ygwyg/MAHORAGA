@@ -46,9 +46,9 @@ Derived from `CODE-REVIEW.md` changes 1-3. Each task is atomic and independently
   Store options buys in `pendingOrders` from `buyOption()` result, keyed by OCC contract symbol. Reconciliation loop handles options fills identically to equity.
   Files: `src/durable-objects/mahoraga-harness.ts`
 
-- [ ] **Move P&L computation to reconciliation loop** `[blocked by: "Add order lifecycle reconciliation" + "Wire daily loss tracking on sell"]`
-  Compute realized P&L in `reconcileOrders()` sell-filled branch using `filled_avg_price`. Call `recordDailyLoss()`/`setCooldown()` there. Simplify `onSell` to just clean up local state.
-  Files: `src/durable-objects/mahoraga-harness.ts`
+- [x] **Move P&L computation to reconciliation loop** `[blocked by: "Add order lifecycle reconciliation" + "Wire daily loss tracking on sell"]`
+  Made `PendingOrder` a discriminated union (`PendingBuyOrder | PendingSellOrder`) with `side` discriminator. Changed `sell()` to return `{ orderId } | null` (from `boolean`), capturing order ID from `closePosition()`. `onSell` now stores a `PendingSellOrder` with snapshotted `entryPrice` + cleans up local state (no async P&L work). `reconcileOrders()` handles sell fills: computes per-share realized P&L from `filled_avg_price` vs `entryPrice`, multiplies by `filled_qty`, calls `recordDailyLoss()`/`setCooldown()` on loss. All buy sites updated with `side: "buy"` discriminator.
+  Files: `src/core/types.ts`, `src/core/policy-broker.ts`, `src/strategy/types.ts`, `src/durable-objects/mahoraga-harness.ts`
 
 ## Dependency Graph
 
