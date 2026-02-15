@@ -30,12 +30,9 @@ Derived from `CODE-REVIEW.md` changes 1-3. Each task is atomic and independently
 
 ### Change 2: Daily Loss Tracking
 
-- [ ] **Wire daily loss tracking on sell**
-  - Add `cooldown_minutes_after_loss` to agent config schema (`src/schemas/agent-config.ts`), `z.number().min(0).max(1440).default(15)`
-  - Change `PolicyBrokerDeps.onSell` type to async: `(symbol: string) => Promise<void>`
-  - In `sell()`, `await` the `onSell` call
-  - In harness `onSell` callback: read position P&L before deleting state, call `recordDailyLoss()` on loss, call `setCooldown()` with configured duration
-  Files: `src/schemas/agent-config.ts`, `src/core/policy-broker.ts`, `src/durable-objects/mahoraga-harness.ts`
+- [x] **Wire daily loss tracking on sell**
+  Added `cooldown_minutes_after_loss` to `AgentConfigSchema` (default 15). Changed `PolicyBrokerDeps.onSell` to async with `closingPosition` param. `sell()` now snapshots position before close, passes to `onSell`. Harness callback reads `unrealized_pl`, calls `recordDailyLoss()`/`setCooldown()` on loss, then cleans up local state.
+  Files: `src/schemas/agent-config.ts`, `src/core/policy-broker.ts`, `src/durable-objects/mahoraga-harness.ts`, `src/strategy/default/config.ts`
 
 ### Change 3: Options Policy Enforcement
 

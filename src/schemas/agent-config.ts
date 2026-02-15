@@ -48,6 +48,8 @@ export const AgentConfigSchema = z
     crypto_take_profit_pct: z.number().min(1).max(100),
     crypto_stop_loss_pct: z.number().min(1).max(50),
 
+    cooldown_minutes_after_loss: z.number().min(0).max(1440).default(15),
+
     ticker_blacklist: z.array(z.string()),
     allowed_exchanges: z.array(z.string()),
   })

@@ -30,8 +30,8 @@ export interface PolicyBrokerDeps {
   allowedExchanges: string[];
   /** Called after a successful buy order */
   onBuy?: (symbol: string, notional: number) => void;
-  /** Called after a successful sell/close order */
-  onSell?: (symbol: string, reason: string) => void;
+  /** Called after a successful sell/close order. Position is the snapshot before close. */
+  onSell?: (symbol: string, reason: string, closingPosition: Position | null) => Promise<void>;
 }
 
 /**
@@ -215,14 +215,19 @@ export function createPolicyBroker(deps: PolicyBrokerDeps): StrategyContext["bro
         }
       }
 
+      // Snapshot position data BEFORE close for P&L tracking
+      const positionsBeforeClose = await getPositions();
+      const closingPosition = positionsBeforeClose.find((p) => p.symbol === symbol);
+
       await alpaca.trading.closePosition(symbol);
       log("PolicyBroker", "sell_executed", { symbol, reason });
 
-      // Invalidate cache after order
+      await deps.onSell?.(symbol, reason, closingPosition ?? null);
+
+      // Invalidate cache after order + callback
       cachedAccount = null;
       cachedPositions = null;
 
-      deps.onSell?.(symbol, reason);
       return true;
     } catch (error) {
       log("PolicyBroker", "sell_failed", { symbol, error: String(error) });

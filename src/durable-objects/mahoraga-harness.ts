@@ -28,6 +28,7 @@ import type { Account, LLMProvider, MarketClock, Position } from "../providers/t
 import type { AgentConfig } from "../schemas/agent-config";
 import { safeValidateAgentConfig } from "../schemas/agent-config";
 import { createD1Client } from "../storage/d1/client";
+import { recordDailyLoss, setCooldown } from "../storage/d1/queries/risk-state";
 import { activeStrategy } from "../strategy";
 import { DEFAULT_STATE } from "../strategy/default/config";
 import {
@@ -149,7 +150,23 @@ export class MahoragaHarness extends DurableObject<Env> {
       log: (agent, action, details) => self.log(agent, action, details),
       cryptoSymbols: self.state.config.crypto_symbols || [],
       allowedExchanges: self.state.config.allowed_exchanges ?? ["NYSE", "NASDAQ", "ARCA", "AMEX", "BATS"],
-      onSell: (symbol) => {
+      onSell: async (symbol, _reason, closingPosition) => {
+        // Read P&L before deleting local state
+        if (closingPosition && closingPosition.unrealized_pl < 0 && db) {
+          const lossUsd = Math.abs(closingPosition.unrealized_pl);
+          await recordDailyLoss(db, lossUsd);
+          const cooldownMinutes = self.state.config.cooldown_minutes_after_loss ?? 15;
+          if (cooldownMinutes > 0) {
+            const cooldownUntil = new Date(Date.now() + cooldownMinutes * 60 * 1000).toISOString();
+            await setCooldown(db, cooldownUntil);
+          }
+          self.log("PolicyBroker", "daily_loss_recorded", {
+            symbol,
+            lossUsd,
+            cooldownMinutes: self.state.config.cooldown_minutes_after_loss ?? 15,
+          });
+        }
+
         delete self.state.positionEntries[symbol];
         delete self.state.socialHistory[symbol];
         delete self.state.stalenessAnalysis[symbol];

@@ -41,6 +41,7 @@ function createValidConfig() {
     crypto_max_position_value: 2000,
     crypto_take_profit_pct: 15,
     crypto_stop_loss_pct: 10,
+    cooldown_minutes_after_loss: 15,
     ticker_blacklist: [],
     allowed_exchanges: ["NYSE", "NASDAQ", "ARCA", "AMEX", "BATS"],
   };

@@ -86,6 +86,7 @@ export const DEFAULT_CONFIG: AgentConfig = {
   crypto_max_position_value: 1000,
   crypto_take_profit_pct: 10,
   crypto_stop_loss_pct: 5,
+  cooldown_minutes_after_loss: 15,
   ticker_blacklist: [],
   allowed_exchanges: ["NYSE", "NASDAQ", "ARCA", "AMEX", "BATS"],
 };
