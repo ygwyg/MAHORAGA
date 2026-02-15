@@ -5,9 +5,8 @@
  * directly, bypassing kill switch, daily loss limits, position concentration, etc.
  * Now all trades (buy AND sell) go through PolicyEngine.evaluate() first.
  *
- * Strategies call ctx.broker.buy()/sell(). buy() returns { orderId } on
- * submission (null on rejection); sell() returns boolean.
- * They cannot bypass these safety checks.
+ * Strategies call ctx.broker.buy()/sell(). Both return { orderId } on
+ * submission, null on rejection. They cannot bypass these safety checks.
  */
 
 import type { OptionsOrderPreview, OrderPreview } from "../mcp/types";
