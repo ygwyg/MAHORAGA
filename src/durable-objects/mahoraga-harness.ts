@@ -401,6 +401,17 @@ export class MahoragaHarness extends DurableObject<Env> {
         if (order.status === "filled") {
           const filledPrice = order.filled_avg_price ? parseFloat(order.filled_avg_price) : 0;
 
+          if (filledPrice <= 0) {
+            this.log("Reconcile", "filled_missing_price", {
+              symbol: pending.symbol,
+              orderId,
+              side: pending.side,
+              rawPrice: order.filled_avg_price,
+            });
+            delete this.state.pendingOrders[orderId];
+            continue;
+          }
+
           if (pending.side === "buy") {
             // Buy filled — create PositionEntry with real fill price
             this.state.positionEntries[pending.symbol] = {
