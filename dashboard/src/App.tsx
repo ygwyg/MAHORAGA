@@ -257,7 +257,7 @@ export default function App() {
     })
   }, [portfolioHistory, portfolioPeriod])
 
-  const { marketMarkers, marketHoursZone } = useMemo(() => {
+const { marketMarkers, marketHoursZone } = useMemo(() => {
     if (portfolioPeriod !== '1D' || portfolioHistory.length === 0) {
       return { marketMarkers: undefined, marketHoursZone: undefined }
     }
@@ -268,8 +268,18 @@ export default function App() {
     
     portfolioHistory.forEach((s, i) => {
       const date = new Date(s.timestamp)
-      const hours = date.getHours()
-      const minutes = date.getMinutes()
+      
+      // Get time in Eastern Time (where US markets operate)
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      })
+      
+      const parts = formatter.formatToParts(date)
+      const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10)
+      const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10)
       
       if (hours === 9 && minutes >= 30 && minutes < 45 && openIndex === -1) {
         openIndex = i
