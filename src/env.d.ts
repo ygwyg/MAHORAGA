@@ -17,7 +17,9 @@ export interface Env {
   CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID?: string;
   CLOUDFLARE_AI_GATEWAY_ID?: string;
   CLOUDFLARE_AI_GATEWAY_TOKEN?: string;
-  LLM_PROVIDER?: "openai-raw" | "ai-sdk" | "cloudflare-gateway";
+  ASTRAI_API_KEY?: string;
+  ASTRAI_STRATEGY?: "cheapest" | "fastest" | "balanced";
+  LLM_PROVIDER?: "openai-raw" | "ai-sdk" | "cloudflare-gateway" | "astrai";
   LLM_MODEL?: string;
   TWITTER_BEARER_TOKEN?: string;
   DISCORD_WEBHOOK_URL?: string;

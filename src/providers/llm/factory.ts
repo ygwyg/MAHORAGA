@@ -1,10 +1,11 @@
 import type { Env } from "../../env.d";
 import type { LLMProvider } from "../types";
 import { createAISDKProvider, SUPPORTED_PROVIDERS, type SupportedProvider } from "./ai-sdk";
+import { createAstraiProvider } from "./astrai";
 import { createCloudflareGatewayProvider } from "./cloudflare-gateway";
 import { createOpenAIProvider } from "./openai";
 
-export type LLMProviderType = "openai-raw" | "ai-sdk" | "cloudflare-gateway";
+export type LLMProviderType = "openai-raw" | "ai-sdk" | "cloudflare-gateway" | "astrai";
 
 /**
  * Factory function to create LLM provider based on environment configuration.
@@ -13,6 +14,7 @@ export type LLMProviderType = "openai-raw" | "ai-sdk" | "cloudflare-gateway";
  * - "openai-raw": Direct OpenAI API calls (default, backward compatible)
  * - "ai-sdk": Vercel AI SDK with 5 providers (OpenAI, Anthropic, Google, xAI, DeepSeek)
  * - "cloudflare-gateway": Cloudflare AI Gateway (/compat) for unified access
+ * - "astrai": Astrai intelligent router — auto-selects optimal model/provider by cost, latency, task
  *
  * @param env - Environment variables
  * @returns LLMProvider instance or null if no valid configuration
@@ -40,6 +42,19 @@ export function createLLMProvider(env: Env): LLMProvider | null {
         gatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
         token: env.CLOUDFLARE_AI_GATEWAY_TOKEN,
         model: effectiveModel,
+      });
+    }
+
+    case "astrai": {
+      if (!env.ASTRAI_API_KEY) {
+        console.warn("LLM_PROVIDER=astrai requires ASTRAI_API_KEY");
+        return null;
+      }
+
+      return createAstraiProvider({
+        apiKey: env.ASTRAI_API_KEY,
+        model,
+        strategy: (env.ASTRAI_STRATEGY as "cheapest" | "fastest" | "balanced") ?? "balanced",
       });
     }
 
@@ -93,6 +108,8 @@ export function isLLMConfigured(env: Env): boolean {
         env.CLOUDFLARE_AI_GATEWAY_ID &&
         env.CLOUDFLARE_AI_GATEWAY_TOKEN
       );
+    case "astrai":
+      return !!env.ASTRAI_API_KEY;
     case "ai-sdk":
       // Any provider API key enables AI SDK
       return !!(
