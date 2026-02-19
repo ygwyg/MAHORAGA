@@ -79,6 +79,8 @@ npx wrangler secret put OPENAI_BASE_URL        # Optional: override OpenAI base 
 # npx wrangler secret put CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID  # For cloudflare-gateway
 # npx wrangler secret put CLOUDFLARE_AI_GATEWAY_ID          # For cloudflare-gateway
 # npx wrangler secret put CLOUDFLARE_AI_GATEWAY_TOKEN       # For cloudflare-gateway
+# npx wrangler secret put ASTRAI_API_KEY                    # For astrai (intelligent router)
+# npx wrangler secret put ASTRAI_STRATEGY                   # For astrai: "balanced", "cheapest", "fastest"
 
 # Optional
 npx wrangler secret put ALPACA_PAPER         # "true" for paper trading (recommended)
@@ -222,6 +224,7 @@ MAHORAGA supports multiple LLM providers via three modes:
 | `openai-raw` | Direct OpenAI API (default) | `OPENAI_API_KEY` |
 | `ai-sdk` | Vercel AI SDK with 5 providers | One or more provider keys |
 | `cloudflare-gateway` | Cloudflare AI Gateway (/compat) | `CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID`, `CLOUDFLARE_AI_GATEWAY_ID`, `CLOUDFLARE_AI_GATEWAY_TOKEN` |
+| `astrai` | Astrai intelligent router — auto-selects optimal model/provider | `ASTRAI_API_KEY` |
 
 **Optional OpenAI Base URL Override:**
 
@@ -249,6 +252,25 @@ MAHORAGA supports multiple LLM providers via three modes:
 npx wrangler secret put LLM_PROVIDER      # Set to "ai-sdk"
 npx wrangler secret put LLM_MODEL         # Set to "anthropic/claude-sonnet-4"
 npx wrangler secret put ANTHROPIC_API_KEY # Your Anthropic API key
+```
+
+**Astrai Intelligent Router:**
+
+[Astrai](https://github.com/beee003/astrai-landing) is an AI inference router that automatically selects the optimal model and provider for each request based on cost, latency, and task complexity. Instead of locking into a single provider, Astrai routes across OpenAI, Anthropic, Google, Groq, DeepInfra, and more — finding the cheapest equivalent model that meets quality requirements.
+
+Set `LLM_MODEL` to `"auto"` for fully automatic model selection, or specify a model (e.g. `"gpt-4o"`) and Astrai will find the cheapest provider for it.
+
+| Strategy | Description |
+|----------|-------------|
+| `balanced` | Balance cost and quality (default) |
+| `cheapest` | Minimize cost while maintaining quality |
+| `fastest` | Minimize latency |
+
+```bash
+npx wrangler secret put LLM_PROVIDER    # Set to "astrai"
+npx wrangler secret put LLM_MODEL       # Set to "auto" or a specific model
+npx wrangler secret put ASTRAI_API_KEY   # Your Astrai API key (sk-astrai-...)
+npx wrangler secret put ASTRAI_STRATEGY  # Optional: "balanced", "cheapest", or "fastest"
 ```
 
 ## API Endpoints
