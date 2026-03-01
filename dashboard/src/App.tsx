@@ -11,7 +11,7 @@ import { NotificationBell } from './components/NotificationBell'
 import { Tooltip, TooltipContent } from './components/Tooltip'
 import type { Status, Config, LogEntry, Signal, Position, SignalResearch, PortfolioSnapshot } from './types'
 
-const API_BASE = '/api'
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 function getApiToken(): string {
   return localStorage.getItem('mahoraga_api_token') || (window as unknown as { VITE_MAHORAGA_API_TOKEN?: string }).VITE_MAHORAGA_API_TOKEN || ''
@@ -144,6 +144,24 @@ export default function App() {
   const [time, setTime] = useState(new Date())
   const [portfolioHistory, setPortfolioHistory] = useState<PortfolioSnapshot[]>([])
   const [portfolioPeriod, setPortfolioPeriod] = useState<'1D' | '1W' | '1M'>('1D')
+  const [toggling, setToggling] = useState(false)
+
+  const handleToggleAgent = async () => {
+    if (!status || toggling) return
+    setToggling(true)
+    try {
+      const endpoint = status.enabled ? '/disable' : '/enable'
+      const res = await authFetch(`${API_BASE}${endpoint}`, { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        setStatus({ ...status, enabled: data.enabled })
+      }
+    } catch {
+      // Ignore errors, status will refresh
+    } finally {
+      setToggling(false)
+    }
+  }
 
   useEffect(() => {
     const checkSetup = async () => {
@@ -363,11 +381,24 @@ export default function App() {
               </span>
               <span className="hud-label">v2</span>
             </div>
-            <StatusIndicator 
-              status={isMarketOpen ? 'active' : 'inactive'} 
+            <StatusIndicator
+              status={isMarketOpen ? 'active' : 'inactive'}
               label={isMarketOpen ? 'MARKET OPEN' : 'MARKET CLOSED'}
               pulse={isMarketOpen}
             />
+            <button
+              onClick={handleToggleAgent}
+              disabled={toggling}
+              className={clsx(
+                'px-3 py-1 text-xs font-mono border transition-colors',
+                status?.enabled
+                  ? 'border-hud-success text-hud-success hover:bg-hud-success/10'
+                  : 'border-hud-error text-hud-error hover:bg-hud-error/10',
+                toggling && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              {toggling ? '...' : status?.enabled ? 'ENABLED' : 'DISABLED'}
+            </button>
           </div>
           <div className="flex items-center gap-3 md:gap-6 flex-wrap">
             <StatusBar

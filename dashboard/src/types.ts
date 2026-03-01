@@ -192,6 +192,7 @@ export interface PositionHistory {
 }
 
 export interface Status {
+  enabled: boolean
   account: Account | null
   positions: Position[]
   clock: Clock | null

@@ -20,7 +20,8 @@
     "check:fix": "biome check --write src/",
     "test": "vitest",
     "test:run": "vitest run",
-    "setup:access": "npx tsx scripts/setup-access.ts"
+    "setup:access": "npx tsx scripts/setup-access.ts",
+    "deploy:dashboard": "./scripts/deploy-dashboard.sh"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.35",
