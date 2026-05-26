@@ -32,7 +32,7 @@
     "@ai-sdk/openai": "^3.0.25",
     "@ai-sdk/xai": "^3.0.46",
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "agents": "^0.0.74",
+    "agents": "^0.2.32",
     "ai": "^6.0.67",
     "openai": "^6.16.0",
     "zod": "^3.23.8"
@@ -42,7 +42,7 @@
     "@cloudflare/workers-types": "^4.20241218.0",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
+    "vitest": "^3.2.4",
     "wrangler": "^4.61.1"
   },
   "engines": {
