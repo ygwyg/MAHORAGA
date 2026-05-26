@@ -143,7 +143,8 @@ export function extractFinancialData(
   percentChanges: string[];
   keyPhrases: string[];
 } {
-  const symbolRegex = new RegExp(`\\b${symbol}\\b`, "gi");
+  const escapedSymbol = symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const symbolRegex = new RegExp(`\\b${escapedSymbol}\\b`, "gi");
   const mentions = (text.match(symbolRegex) || []).length;
 
   const priceRegex = /\$[\d,]+\.?\d*/g;

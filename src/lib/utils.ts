@@ -10,19 +10,14 @@ export function nowISO(): string {
   return new Date().toISOString();
 }
 
-export function hashObject(obj: unknown): string {
+export async function hashObject(obj: unknown): Promise<string> {
   const str = JSON.stringify(obj, Object.keys(obj as object).sort());
-  return simpleHash(str);
-}
-
-function simpleHash(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16).padStart(8, "0");
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export async function hmacSign(data: string, secret: string): Promise<string> {
@@ -40,7 +35,12 @@ export async function hmacSign(data: string, secret: string): Promise<string> {
 
 export async function hmacVerify(data: string, signature: string, secret: string): Promise<boolean> {
   const expected = await hmacSign(data, secret);
-  return expected === signature;
+  if (expected.length !== signature.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < expected.length; i++) {
+    mismatch |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+  return mismatch === 0;
 }
 
 export function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {

@@ -90,7 +90,7 @@
         "name": "Can I customize the trading strategy?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes. The harness has [TUNE] markers for numeric values and [CUSTOMIZABLE] sections. Add new data sources easily."
+          "text": "Yes. Create your own strategy in src/strategy/my-strategy/ and change one import line. Mix and match gatherers, prompts, and trading rules without touching core files."
         }
       },
       {
@@ -115,26 +115,42 @@
     :root {
       --bg: #0a0c0e;
       --panel: #0d1012;
-      --line: rgba(122, 155, 168, 0.12);
+      --panel-hover: #10141a;
+      --line: rgba(122, 155, 168, 0.15);
+      --border: rgba(122, 155, 168, 0.2);
       --text: #7a9ba8;
       --dim: #4a5a62;
       --bright: #c8dce4;
+      --accent: #b89848;
+      --accent-glow: rgba(184, 152, 72, 0.15);
+      --success: #4a9868;
+      --error: #b84848;
     }
 
     html {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
       font-size: 10px;
       background: var(--bg);
       color: var(--text);
       letter-spacing: 0.05em;
+      scroll-behavior: smooth;
     }
 
-    body { min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    body {
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
     a { color: inherit; text-decoration: none; }
+    ::selection { background: rgba(184, 152, 72, 0.3); color: var(--bright); }
 
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
 
-    /* Promo Banner */
+    body > * { position: relative; z-index: 1; }
+
+    /* === Promo Banner === */
     .promo-banner {
       position: fixed;
       top: 0;
@@ -142,176 +158,179 @@
       right: 0;
       z-index: 101;
       background: var(--panel);
-      border-bottom: 1px solid var(--line);
+      border-bottom: 0.5px solid var(--line);
       padding: 10px 24px;
       text-align: center;
       font-size: 11px;
       color: var(--dim);
       display: none;
-      transition: transform 0.3s ease, opacity 0.3s ease;
+      transition: transform 0.3s, opacity 0.3s;
     }
 
-    .promo-banner.loaded {
-      display: block;
-    }
-
-    .promo-banner.hidden {
-      transform: translateY(-100%);
-      opacity: 0;
-    }
+    .promo-banner.loaded { display: block; }
+    .promo-banner.hidden { transform: translateY(-100%); opacity: 0; }
 
     .promo-banner a {
       color: var(--bright);
       margin-left: 8px;
       transition: opacity 0.2s;
     }
+    .promo-banner a:hover { opacity: 0.7; }
+    .promo-leader { color: var(--accent); font-weight: 500; }
+    .promo-roi { color: var(--text); }
 
-    .promo-banner a:hover {
-      opacity: 0.7;
-    }
-
-    .promo-leader {
-      color: #4a9868;
-      font-weight: 500;
-    }
-
-    .promo-roi {
-      color: var(--text);
-    }
-
-    /* Header */
+    /* === Header === */
     header {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 100;
-      background: rgba(10, 12, 14, 0.9);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--line);
+      background: rgba(10, 12, 14, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid var(--line);
       transition: top 0.3s;
     }
 
-    .has-banner header {
-      top: 38px;
-    }
-
-    .has-banner .hero {
-      padding-top: 178px;
-    }
+    .has-banner header { top: 38px; }
+    .has-banner .hero { padding-top: 200px; }
 
     .header-inner {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      height: 52px;
+      height: 56px;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
+      gap: 10px;
+      font-size: 12px;
       font-weight: 500;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
       color: var(--bright);
     }
 
-    .logo img {
-      width: 18px;
-      height: 18px;
-    }
+    .logo img { width: 20px; height: 20px; }
 
     nav { display: flex; align-items: center; gap: 32px; }
 
     nav a {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
       transition: color 0.2s;
     }
 
-    nav a:hover { color: var(--bright); }
+    nav a:hover { color: var(--text); }
 
-    .btn-primary {
+    .nav-cta {
       font-size: 10px;
-      padding: 8px 14px;
-      background: transparent;
-      border: 1px solid var(--line);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 8px 16px;
+      border: 0.5px solid var(--text);
       color: var(--text);
-      letter-spacing: 0.05em;
       transition: all 0.2s;
     }
 
-    .btn-primary:hover { 
-      border-color: var(--text);
-      color: var(--bright);
+    .nav-cta:hover {
+      background: var(--text);
+      color: var(--bg);
     }
 
-    /* Hero */
+    /* === Hero === */
     .hero {
-      padding: 140px 0 60px;
+      padding: 170px 0 80px;
       text-align: center;
+      position: relative;
     }
 
     .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 14px;
-      border: 1px solid var(--line);
-      font-size: 10px;
+      padding: 8px 16px;
+      border: 0.5px solid var(--line);
+      font-size: 8px;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.15em;
       color: var(--dim);
-      margin-bottom: 32px;
+      margin-bottom: 40px;
     }
 
     .hero-badge .dot {
-      width: 6px;
-      height: 6px;
-      background: #4a9868;
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
       border-radius: 50%;
+      animation: pulse 2.5s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     .hero h1 {
-      font-size: 44px;
+      font-size: 52px;
       font-weight: 300;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
       color: var(--bright);
       line-height: 1.2;
-      max-width: 900px;
-      margin: 0 auto 20px;
+      max-width: 800px;
+      margin: 0 auto 24px;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
     }
 
     .hero-sub {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--dim);
-      margin-bottom: 40px;
+      margin: 0 auto 48px;
+      max-width: 460px;
+      line-height: 1.9;
       font-weight: 300;
     }
 
     .hero-cta {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      padding: 16px 32px;
-      background: var(--bright);
+      gap: 8px;
+      font-family: inherit;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 14px 32px;
+      border: 0.5px solid var(--accent);
+      color: var(--accent);
+      background: transparent;
+      transition: all 0.2s;
+    }
+
+    .hero-cta:hover {
+      background: var(--accent);
       color: var(--bg);
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      transition: opacity 0.2s;
     }
 
-    .hero-cta:hover { opacity: 0.85; }
-
-    /* Dashboard */
-    .dashboard-section {
-      padding: 0 0 80px;
+    .hero-note {
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 24px;
+      letter-spacing: 0.08em;
     }
+
+    /* === Dashboard === */
+    .dashboard-section { padding: 0 0 100px; }
 
     .dashboard-frame {
-      border: 1px solid var(--line);
+      border: 0.5px solid var(--line);
       background: var(--panel);
     }
 
@@ -319,8 +338,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 18px;
-      border-bottom: 1px solid var(--line);
+      padding: 12px 16px;
+      border-bottom: 0.5px solid var(--line);
     }
 
     .label {
@@ -330,10 +349,7 @@
       color: var(--dim);
     }
 
-    .value {
-      font-size: 11px;
-      color: var(--text);
-    }
+    .value { font-size: 11px; color: var(--text); }
 
     .dashboard-status {
       display: flex;
@@ -341,139 +357,141 @@
       gap: 8px;
     }
 
-    .pulse {
-      width: 6px;
-      height: 6px;
-      background: var(--text);
+    .dot-pulse {
+      width: 5px;
+      height: 5px;
+      background: var(--success);
       border-radius: 50%;
       animation: pulse 2.5s infinite;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
+    .dashboard-frame img { width: 100%; display: block; }
 
-    .dashboard-frame img {
-      width: 100%;
+    /* === Section Headers === */
+    .section-label {
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--dim);
+      margin-bottom: 16px;
       display: block;
     }
 
-    /* Bento */
-    .bento-section {
-      padding: 0 0 80px;
+    .section-title {
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--bright);
+      letter-spacing: -0.01em;
+      line-height: 1.3;
     }
+
+    /* === Bento Grid === */
+    .features-section { padding: 0 0 100px; }
+
+    .features-header { margin-bottom: 40px; }
 
     .bento {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 1px;
       background: var(--line);
-      border: 1px solid var(--line);
+      border: 0.5px solid var(--line);
     }
 
     .card {
       background: var(--panel);
       padding: 32px;
-      transition: background 0.3s;
+      position: relative;
+      transition: background 0.2s;
+      overflow: hidden;
     }
 
     .card:hover {
-      background: #0f1214;
+      background: var(--panel-hover);
     }
 
     .card-label {
-      font-size: 9px;
+      font-size: 8px;
       text-transform: uppercase;
       letter-spacing: 0.15em;
       color: var(--dim);
       margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-label::before {
+      content: '';
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--dim);
+      transition: background 0.2s;
+    }
+
+    .card:hover .card-label::before {
+      background: var(--accent);
     }
 
     .card-title {
       font-size: 20px;
-      font-weight: 400;
+      font-weight: 300;
       color: var(--bright);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       letter-spacing: -0.01em;
       line-height: 1.3;
     }
 
     .card-desc {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--dim);
-      line-height: 1.7;
+      line-height: 1.8;
     }
 
-    .card.wide {
-      grid-column: span 2;
-    }
+    .card.wide { grid-column: span 2; }
 
-    /* Card visuals - small illustrative hints */
+    /* === Card Visuals === */
     .card-visual {
       margin-top: 20px;
       padding-top: 16px;
-      border-top: 1px solid var(--line);
+      border-top: 0.5px solid var(--line);
       font-size: 11px;
     }
 
     .ticker {
-      display: inline-block;
-      padding: 6px 10px;
-      border: 1px solid var(--line);
-      margin-right: 8px;
-      margin-bottom: 8px;
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border: 0.5px solid var(--line);
+      margin-right: 6px;
+      margin-bottom: 6px;
       color: var(--text);
+      transition: all 0.2s;
+      cursor: default;
+      position: relative;
     }
 
+    .ticker:hover {
+      border-color: var(--border);
+      color: var(--bright);
+    }
+
+    /* === Interactive: Signal Flow === */
     .flow {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
     }
 
     .flow-item {
+      opacity: 0.3;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 6px 0;
       color: var(--text);
     }
 
-    .flow-arrow {
-      color: var(--dim);
-    }
-
-    .provider-dot {
-      width: 5px;
-      height: 5px;
-      background: var(--dim);
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .provider-name {
-      color: var(--text);
-      flex: 1;
-      font-size: 11px;
-      transition: color 0.3s;
-    }
-
-    .provider-label {
-      color: var(--dim);
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-
-
-    /* Interactive elements */
-    
-    /* Flow animation */
-    .flow-item {
-      opacity: 0.4;
-      transition: all 0.4s ease;
-      padding: 4px 0;
-    }
-    
     .flow-item.active {
       opacity: 1;
       color: var(--bright);
@@ -481,29 +499,18 @@
 
     .flow-ticker, .flow-confidence, .flow-qty {
       color: var(--bright);
-      transition: all 0.2s;
+      transition: all 0.3s;
     }
 
     .flow-item.active .flow-ticker,
     .flow-item.active .flow-confidence,
     .flow-item.active .flow-qty {
-      text-shadow: 0 0 10px rgba(200, 220, 228, 0.3);
+      color: var(--accent);
     }
 
-    /* Crypto tickers with live prices */
-    .ticker {
-      transition: all 0.2s;
-      cursor: default;
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
+    .flow-arrow { color: var(--dim); }
 
-    .ticker:hover {
-      border-color: var(--text);
-      color: var(--bright);
-    }
-
+    /* === Interactive: Crypto Tickers === */
     .ticker .price {
       margin-left: 10px;
       font-size: 10px;
@@ -512,14 +519,8 @@
       text-align: right;
     }
 
-    .ticker .price.up { 
-      color: #4a9868; 
-      text-shadow: 0 0 8px rgba(74, 152, 104, 0.4);
-    }
-    .ticker .price.down { 
-      color: #b84848; 
-      text-shadow: 0 0 8px rgba(184, 72, 72, 0.4);
-    }
+    .ticker .price.up { color: var(--success); }
+    .ticker .price.down { color: var(--error); }
 
     .trade-notification {
       position: absolute;
@@ -529,12 +530,12 @@
       font-size: 8px;
       padding: 4px 10px;
       background: var(--bg);
-      border: 1px solid var(--line);
+      border: 0.5px solid var(--line);
       white-space: nowrap;
       opacity: 0;
-      transition: all 0.4s ease;
+      transition: all 0.3s;
       pointer-events: none;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
     }
 
     .trade-notification.show {
@@ -542,64 +543,75 @@
       transform: translateX(-50%) translateY(-4px);
     }
 
-    .trade-notification.buy { 
-      border-color: #4a9868; 
-      color: #4a9868; 
-      box-shadow: 0 0 15px rgba(74, 152, 104, 0.2);
-    }
-    .trade-notification.sell { 
-      border-color: #b84848; 
-      color: #b84848; 
-      box-shadow: 0 0 15px rgba(184, 72, 72, 0.2);
+    .trade-notification.buy {
+      border-color: var(--success);
+      color: var(--success);
     }
 
-    /* LLM selector */
+    .trade-notification.sell {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* === Interactive: LLM Selector === */
     .provider {
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s;
       margin: 0 -8px;
-      padding: 10px 8px;
-      border: 1px solid transparent;
+      padding: 8px 8px;
+      border: 0.5px solid transparent;
       margin-bottom: 2px;
     }
 
-    .provider:hover {
-      background: rgba(122, 155, 168, 0.05);
-    }
+    .provider:hover { background: rgba(122, 155, 168, 0.04); }
 
     .provider.selected {
-      background: rgba(122, 155, 168, 0.06);
+      background: rgba(122, 155, 168, 0.05);
       border-color: var(--line);
     }
 
     .provider.selected .provider-dot {
-      background: var(--bright);
-      box-shadow: 0 0 8px rgba(200, 220, 228, 0.5);
+      background: var(--accent);
     }
 
-    .provider.selected .provider-name {
-      color: var(--bright);
-    }
+    .provider.selected .provider-name { color: var(--bright); }
 
     .provider-dot {
-      transition: all 0.3s;
+      width: 4px;
+      height: 4px;
+      background: var(--dim);
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: all 0.2s;
     }
 
-    /* Risk controls - minimal inline tabs */
+    .provider-name {
+      color: var(--text);
+      flex: 1;
+      font-size: 11px;
+      transition: color 0.2s;
+    }
+
+    .provider-label {
+      color: var(--dim);
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* === Interactive: Risk Controls === */
     .control-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 8px 0;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 0.5px solid var(--line);
     }
 
-    .control-row:last-child {
-      border-bottom: none;
-    }
+    .control-row:last-child { border-bottom: none; }
 
     .control-label {
       font-size: 10px;
@@ -617,20 +629,18 @@
       color: var(--dim);
       cursor: pointer;
       transition: all 0.2s;
-      border: 1px solid transparent;
+      border: 0.5px solid transparent;
     }
 
-    .control-tab:hover {
-      color: var(--text);
-    }
+    .control-tab:hover { color: var(--text); }
 
     .control-tab.active {
-      color: var(--bright);
-      border-color: var(--line);
-      background: rgba(122, 155, 168, 0.05);
+      color: var(--accent);
+      border-color: rgba(184, 152, 72, 0.3);
+      background: rgba(184, 152, 72, 0.06);
     }
 
-    /* Code markers hover */
+    /* === Interactive: Markers === */
     .marker {
       cursor: pointer;
       transition: all 0.2s;
@@ -638,7 +648,7 @@
     }
 
     .marker:hover {
-      border-color: var(--text);
+      border-color: var(--border);
       color: var(--bright);
       transform: translateY(-2px);
     }
@@ -648,9 +658,9 @@
       bottom: 100%;
       left: 50%;
       transform: translateX(-50%);
-      padding: 8px 12px;
+      padding: 6px 12px;
       background: var(--panel);
-      border: 1px solid var(--line);
+      border: 0.5px solid var(--border);
       font-size: 10px;
       color: var(--dim);
       white-space: nowrap;
@@ -662,52 +672,45 @@
 
     .marker:hover .marker-tooltip {
       opacity: 1;
-      transform: translateX(-50%) translateY(-4px);
+      transform: translateX(-50%) translateY(-2px);
     }
 
-    /* FAQ */
-    .faq-section {
-      padding: 0 0 80px;
-    }
+    /* === FAQ === */
+    .faq-section { padding: 0 0 100px; }
 
-    .faq-header {
-      margin-bottom: 32px;
-    }
-
-    .faq-title {
-      font-size: 24px;
-      font-weight: 300;
-      color: var(--bright);
-      letter-spacing: -0.02em;
-    }
+    .faq-header { margin-bottom: 40px; }
 
     .faq-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1px;
       background: var(--line);
-      border: 1px solid var(--line);
+      border: 0.5px solid var(--line);
     }
 
     .faq-item {
       background: var(--panel);
-      padding: 24px;
+      padding: 28px;
+      transition: background 0.2s;
     }
+
+    .faq-item:hover { background: var(--panel-hover); }
 
     .faq-q {
       font-size: 12px;
       color: var(--bright);
-      margin-bottom: 12px;
-      line-height: 1.4;
+      margin-bottom: 10px;
+      line-height: 1.5;
+      font-weight: 400;
     }
 
     .faq-a {
       font-size: 11px;
       color: var(--dim);
-      line-height: 1.7;
+      line-height: 1.8;
     }
 
-    /* CTA */
+    /* === CTA === */
     .cta {
       padding: 120px 0 200px;
       text-align: center;
@@ -715,34 +718,48 @@
       overflow: hidden;
     }
 
+    .cta .container { position: relative; z-index: 1; }
+
     .cta h2 {
       font-size: 36px;
       font-weight: 300;
       color: var(--bright);
       letter-spacing: -0.02em;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .cta h2 em {
+      font-style: normal;
+      color: var(--accent);
     }
 
     .cta-sub {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--dim);
       margin-bottom: 40px;
+      letter-spacing: 0.05em;
     }
 
     .cta-btn {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      padding: 18px 40px;
-      background: var(--bright);
-      color: var(--bg);
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      transition: opacity 0.2s;
+      gap: 8px;
+      font-size: 11px;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 16px 40px;
+      border: 0.5px solid var(--bright);
+      color: var(--bright);
+      background: transparent;
+      transition: all 0.2s;
     }
 
-    .cta-btn:hover { opacity: 0.85; }
+    .cta-btn:hover {
+      background: var(--bright);
+      color: var(--bg);
+    }
 
     .wheel-container {
       position: absolute;
@@ -758,25 +775,18 @@
     .wheel-svg {
       width: 100%;
       height: 100%;
-      opacity: 0.15;
-      transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity: 0.04;
+      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
       cursor: pointer;
       pointer-events: auto;
     }
 
-    .wheel-svg:hover {
-      opacity: 0.25;
-    }
+    .wheel-svg:hover { opacity: 0.12; }
 
-    .cta .container {
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Footer */
+    /* === Footer === */
     footer {
       padding: 24px 0;
-      border-top: 1px solid var(--line);
+      border-top: 0.5px solid var(--line);
     }
 
     .footer-inner {
@@ -785,45 +795,98 @@
       align-items: center;
     }
 
-    .footer-links {
-      display: flex;
-      gap: 32px;
-    }
+    .footer-links { display: flex; gap: 28px; }
 
     .footer-links a {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--dim);
       transition: color 0.2s;
     }
 
-    .footer-links a:hover { color: var(--bright); }
+    .footer-links a:hover { color: var(--text); }
 
     .footer-right {
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 20px;
       font-size: 10px;
       color: var(--dim);
     }
 
-    .footer-right a { color: var(--text); }
+    .footer-right a {
+      color: var(--text);
+      transition: color 0.2s;
+    }
 
-    /* Responsive */
+    .footer-right a:hover { color: var(--accent); }
+
+    /* === Entrance Animations === */
+    .hero-animate {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: heroEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--d, 0s);
+    }
+
+    @keyframes heroEnter {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .bento .card {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s;
+    }
+
+    .bento .card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .faq-grid .faq-item {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s;
+    }
+
+    .faq-grid .faq-item.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* === Responsive === */
     @media (max-width: 900px) {
-      .hero h1 { font-size: 32px; }
+      .hero h1 { font-size: 36px; }
       .bento { grid-template-columns: 1fr 1fr; }
       .card.wide { grid-column: span 2; }
       .faq-grid { grid-template-columns: 1fr; }
+      .section-title { font-size: 24px; }
+      .cta h2 { font-size: 28px; }
     }
 
     @media (max-width: 600px) {
-      .hero { padding: 120px 0 40px; }
-      .hero h1 { font-size: 26px; }
+      .hero { padding: 130px 0 50px; }
+      .hero h1 { font-size: 28px; }
+      .hero-sub { font-size: 12px; }
+      .hero-cta { padding: 12px 24px; }
       .bento { grid-template-columns: 1fr; }
       .card.wide { grid-column: span 1; }
       nav { gap: 16px; }
-      .cta h2 { font-size: 26px; }
-      .footer-inner { flex-direction: column; gap: 16px; }
+      .nav-cta { display: none; }
+      .cta h2 { font-size: 24px; }
+      .cta { padding: 80px 0 160px; }
+      .footer-inner { flex-direction: column; gap: 12px; }
     }
   </style>
 </head>
@@ -840,7 +903,7 @@
         <a href="./getting-started.html">Docs</a>
         <a href="https://github.com/ygwyg/MAHORAGA">GitHub</a>
         <a href="https://discord.gg/vMFnHe2YBh">Discord</a>
-        <a href="./getting-started.html" class="btn-primary">Get Started</a>
+        <a href="./getting-started.html" class="nav-cta">Get Started</a>
       </nav>
     </div>
   </header>
@@ -848,23 +911,24 @@
   <main>
     <section class="hero">
       <div class="container">
-        <div class="hero-badge">
+        <div class="hero-badge hero-animate" style="--d: 0.1s">
           <span class="dot"></span>
           Open Source
         </div>
-        <h1>Autonomous trading agent that adapts to the market.</h1>
-        <p class="hero-sub">Runs 24/7 locally or securely in the cloud.</p>
-        <a href="./getting-started.html" class="hero-cta">Deploy in 5 minutes →</a>
+        <h1 class="hero-animate" style="--d: 0.25s">Autonomous trading agent that <em>adapts</em> to the market.</h1>
+        <p class="hero-sub hero-animate" style="--d: 0.4s">Monitors social sentiment. Researches with LLMs. Executes via Alpaca. Runs 24/7.</p>
+        <a href="./getting-started.html" class="hero-cta hero-animate" style="--d: 0.55s">Deploy in 5 minutes →</a>
+        <p class="hero-note hero-animate" style="--d: 0.65s">Free & open source · MIT License</p>
       </div>
     </section>
 
     <section class="dashboard-section">
-      <div class="container">
+      <div class="container reveal">
         <div class="dashboard-frame">
           <div class="dashboard-bar">
             <span class="label">Dashboard</span>
             <div class="dashboard-status">
-              <span class="pulse"></span>
+              <span class="dot-pulse"></span>
               <span class="value">Live</span>
             </div>
           </div>
@@ -873,13 +937,17 @@
       </div>
     </section>
 
-    <section class="bento-section">
+    <section class="features-section">
       <div class="container">
+        <div class="features-header reveal">
+          <span class="section-label">Capabilities</span>
+          <h2 class="section-title">Everything you need to<br>trade autonomously.</h2>
+        </div>
         <div class="bento">
           <div class="card wide">
             <div class="card-label">How it works</div>
             <h3 class="card-title">Monitor. Analyze. Execute.</h3>
-            <p class="card-desc">The agent monitors StockTwits and Reddit for trending tickers. Each signal is researched by the LLM—analyzing sentiment, timing, catalysts, and red flags. If confidence is high enough, it executes via Alpaca and monitors the position.</p>
+            <p class="card-desc">The agent monitors StockTwits and Reddit for trending tickers. Each signal is researched by the LLM — analyzing sentiment, timing, catalysts, and red flags. If confidence is high enough, it executes via Alpaca and monitors the position.</p>
             <div class="card-visual">
               <div class="flow" id="signal-flow">
                 <span class="flow-item" data-step="0"><span class="flow-ticker">$NVDA</span> trending</span>
@@ -979,19 +1047,19 @@
           <div class="card">
             <div class="card-label">Fully customizable</div>
             <h3 class="card-title">Make it yours</h3>
-            <p class="card-desc">Well-documented TypeScript with markers for values and logic you might want to change.</p>
+            <p class="card-desc">Pluggable strategy system. Create your own strategy with custom gatherers, prompts, and trading rules.</p>
             <div class="card-visual">
               <span class="ticker marker">
-                [TUNE]
-                <span class="marker-tooltip">Numeric values you can adjust</span>
+                Gatherers
+                <span class="marker-tooltip">Add custom data sources</span>
               </span>
               <span class="ticker marker">
-                [CUSTOMIZABLE]
-                <span class="marker-tooltip">Logic you might want to modify</span>
+                Prompts
+                <span class="marker-tooltip">Customize LLM research prompts</span>
               </span>
               <span class="ticker marker">
-                [TOGGLE]
-                <span class="marker-tooltip">Features to enable/disable</span>
+                Rules
+                <span class="marker-tooltip">Define entry/exit logic</span>
               </span>
             </div>
           </div>
@@ -1001,9 +1069,9 @@
 
     <section class="faq-section">
       <div class="container">
-        <div class="faq-header">
-          <span class="label" style="margin-bottom: 8px; display: block;">FAQ</span>
-          <h2 class="faq-title">Common questions</h2>
+        <div class="faq-header reveal">
+          <span class="section-label">FAQ</span>
+          <h2 class="section-title">Common questions</h2>
         </div>
         <div class="faq-grid">
           <div class="faq-item">
@@ -1024,7 +1092,7 @@
           </div>
           <div class="faq-item">
             <div class="faq-q">Can I customize the strategy?</div>
-            <div class="faq-a">Yes. The harness has [TUNE] markers for numeric values and [CUSTOMIZABLE] sections. Add new data sources easily.</div>
+            <div class="faq-a">Yes. Create a strategy in src/strategy/my-strategy/ and change one import line. Reuse default gatherers, override prompts, define your own entry/exit rules.</div>
           </div>
           <div class="faq-item">
             <div class="faq-q">What if something goes wrong?</div>
@@ -1035,8 +1103,8 @@
     </section>
 
     <section class="cta">
-      <div class="container">
-        <h2>Start trading autonomously</h2>
+      <div class="container reveal">
+        <h2>Start trading <em>autonomously</em></h2>
         <p class="cta-sub">Clone. Configure. Deploy. Full control.</p>
         <a href="./getting-started.html" class="cta-btn">Get Started →</a>
       </div>
@@ -1060,8 +1128,53 @@
       </div>
     </div>
   </footer>
+
   <script>
-    // Fetch leaderboard winner from sukuna.dev
+    // === Scroll reveal animations ===
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // Stagger bento cards
+    const cardObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const cards = entry.target.querySelectorAll('.card');
+          cards.forEach((card, i) => {
+            setTimeout(() => card.classList.add('visible'), i * 80);
+          });
+          cardObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    const bento = document.querySelector('.bento');
+    if (bento) cardObserver.observe(bento);
+
+    // Stagger FAQ items
+    const faqObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const items = entry.target.querySelectorAll('.faq-item');
+          items.forEach((item, i) => {
+            setTimeout(() => item.classList.add('visible'), i * 60);
+          });
+          faqObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    const faqGrid = document.querySelector('.faq-grid');
+    if (faqGrid) faqObserver.observe(faqGrid);
+
+    // === Fetch leaderboard winner from sukuna.dev ===
     async function fetchLeaderboard() {
       try {
         const res = await fetch('https://sukuna.dev/api/leaderboard?period=30&sort=composite_score&asset_class=all&limit=1');
@@ -1074,13 +1187,11 @@
           document.getElementById('promo-banner').classList.add('loaded');
           document.body.classList.add('has-banner');
         }
-      } catch (e) {
-        // Silently fail - banner just won't show
-      }
+      } catch (e) {}
     }
     fetchLeaderboard();
 
-    // Fetch real crypto prices from CoinGecko
+    // === Fetch real crypto prices from CoinGecko ===
     async function fetchCryptoPrices() {
       try {
         const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true');
@@ -1093,12 +1204,10 @@
           cryptoPrices.SOL.price = data.solana?.usd || cryptoPrices.SOL.price;
           cryptoPrices.SOL.base = cryptoPrices.SOL.price;
         }
-      } catch (e) {
-        // Use default prices
-      }
+      } catch (e) {}
     }
 
-    // Signal flow animation
+    // === Signal flow animation ===
     const tickers = ['$NVDA', '$TSLA', '$AAPL', '$GOOGL', '$MSFT', '$AMD', '$META'];
     const flowItems = document.querySelectorAll('#signal-flow .flow-item');
     const flowTicker = document.querySelector('.flow-ticker');
@@ -1110,7 +1219,7 @@
       flowItems.forEach((item, i) => {
         item.classList.toggle('active', i <= flowStep);
       });
-      
+
       if (flowStep === 0) {
         flowTicker.textContent = tickers[Math.floor(Math.random() * tickers.length)];
       } else if (flowStep === 2) {
@@ -1128,16 +1237,14 @@
     setInterval(animateFlow, 1200);
     animateFlow();
 
-    // Crypto price updates
+    // === Crypto price updates ===
     const cryptoPrices = {
       BTC: { base: 97842, price: 97842 },
       ETH: { base: 3421, price: 3421 },
       SOL: { base: 198, price: 198 }
     };
-    
-    // Fetch real prices on load, then update display
+
     fetchCryptoPrices().then(() => {
-      // Update initial display with real prices
       document.querySelector('.ticker[data-symbol="BTC"] .price').textContent = '$' + cryptoPrices.BTC.price.toLocaleString('en-US', { maximumFractionDigits: 0 });
       document.querySelector('.ticker[data-symbol="ETH"] .price').textContent = '$' + cryptoPrices.ETH.price.toLocaleString('en-US', { maximumFractionDigits: 0 });
       document.querySelector('.ticker[data-symbol="SOL"] .price').textContent = '$' + cryptoPrices.SOL.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1149,22 +1256,21 @@
       const crypto = cryptoPrices[symbol];
       const change = (Math.random() - 0.48) * crypto.base * 0.0005;
       crypto.price = Math.max(crypto.base * 0.99, Math.min(crypto.base * 1.01, crypto.price + change));
-      
+
       const ticker = document.querySelector(`.ticker[data-symbol="${symbol}"]`);
       const priceEl = ticker.querySelector('.price');
       const oldPrice = parseFloat(priceEl.textContent.replace(/[$,]/g, ''));
       const newPrice = crypto.price;
-      
+
       const decimals = symbol === 'SOL' ? 2 : 0;
-      priceEl.textContent = '$' + newPrice.toLocaleString('en-US', { 
+      priceEl.textContent = '$' + newPrice.toLocaleString('en-US', {
         minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals 
+        maximumFractionDigits: decimals
       });
-      
+
       priceEl.classList.remove('up', 'down');
       priceEl.classList.add(newPrice > oldPrice ? 'up' : 'down');
 
-      // Random trade notification
       if (Math.random() < 0.12) {
         const notif = ticker.querySelector('.trade-notification');
         const isBuy = Math.random() > 0.4;
@@ -1176,7 +1282,7 @@
 
     setInterval(updateCrypto, 800);
 
-    // LLM selector
+    // === LLM selector ===
     const providers = document.querySelectorAll('#llm-selector .provider');
     let autoSelectInterval;
 
@@ -1189,7 +1295,6 @@
       provider.addEventListener('click', () => {
         selectProvider(provider);
         clearInterval(autoSelectInterval);
-        // Resume auto-select after 5 seconds of no interaction
         setTimeout(() => {
           autoSelectInterval = setInterval(autoSelect, 3000);
         }, 5000);
@@ -1204,7 +1309,7 @@
 
     autoSelectInterval = setInterval(autoSelect, 3000);
 
-    // Risk controls - tab selection
+    // === Risk controls ===
     document.querySelectorAll('#risk-controls .control-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         const tabs = tab.parentElement;
@@ -1213,19 +1318,18 @@
       });
     });
 
-    // Wheel rotation
+    // === Wheel rotation ===
     let wheelRotation = 0;
     const wheel = document.querySelector('.wheel-svg');
-    
+
     wheel.addEventListener('click', () => {
       wheelRotation += 90;
       wheel.style.transform = `rotate(${wheelRotation}deg)`;
     });
 
-    // Hide promo banner on scroll
-    let lastScrollY = 0;
+    // === Hide promo banner on scroll ===
     const promoBanner = document.getElementById('promo-banner');
-    
+
     window.addEventListener('scroll', () => {
       const scrollY = window.scrollY;
       if (scrollY > 50 && promoBanner.classList.contains('loaded')) {
@@ -1235,7 +1339,6 @@
         promoBanner.classList.remove('hidden');
         document.body.classList.add('has-banner');
       }
-      lastScrollY = scrollY;
     }, { passive: true });
   </script>
 </body>

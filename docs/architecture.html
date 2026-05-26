@@ -21,39 +21,53 @@
   <link rel="icon" type="image/svg+xml" href="/mahoraga.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/og-image.png">
 
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link href="https://cdn.jsdelivr.net/npm/iosevka-webfont@14.0.0/iosevka.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0c0e; --bg-subtle: #0d1012; --border: rgba(122, 155, 168, 0.15);
-      --muted: #4a5a62; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4;
-      --accent: #7a9ba8; --success: #4a9868;
-      --sidebar-width: 200px;
+      --bg: #080a0c; --bg-subtle: #0c0f13; --surface: #0c0f13; --surface-hover: #11151a;
+      --border: rgba(122, 155, 168, 0.1); --border-hover: rgba(122, 155, 168, 0.18);
+      --muted: #4a5d68; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4; --white: #e4edf2;
+      --accent: #7a9ba8; --gold: #CFB97D; --gold-dim: #94814C; --gold-glow: rgba(207, 185, 125, 0.08);
+      --sidebar-width: 210px;
     }
     html { font-size: 14px; }
     body {
-      font-family: 'Iosevka Web', 'Iosevka', monospace;
+      font-family: 'JetBrains Mono', monospace;
       background: var(--bg); color: var(--text);
       min-height: 100vh; line-height: 1.7;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    ::selection { background: var(--accent); color: var(--bg); }
+    ::selection { background: rgba(207, 185, 125, 0.3); color: var(--white); }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(122, 155, 168, 0.03) 1px, transparent 0);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body > * { position: relative; z-index: 1; }
 
     .disclaimer {
-      background: #111; color: #999; text-align: center;
+      background: var(--surface); color: #999; text-align: center;
       padding: 10px 16px; font-size: 11px; letter-spacing: 0.5px;
     }
 
     .site-header {
       display: flex; justify-content: space-between; align-items: center;
       padding: 16px 24px; border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; background: var(--bg); z-index: 100;
+      position: sticky; top: 0; background: rgba(8, 10, 12, 0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 100;
     }
 
     .site-logo {
       display: flex; align-items: center; gap: 10px;
-      text-decoration: none; color: var(--bright);
+      text-decoration: none; color: var(--white);
     }
     .site-logo img { width: 18px; height: 18px; }
     .site-logo span { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
@@ -81,12 +95,14 @@
       color: var(--subtle); text-decoration: none; font-size: 12px;
       padding: 8px 12px; border-radius: 4px; transition: all 0.15s;
     }
-    .sidebar-nav a:hover { color: var(--bright); background: var(--bg-subtle); }
-    .sidebar-nav a.active { color: var(--bright); background: var(--bg-subtle); font-weight: 500; }
+    .sidebar-nav a { border-left: 2px solid transparent; }
+    .sidebar-nav a:hover { color: var(--bright); background: var(--bg-subtle); border-left-color: rgba(122, 155, 168, 0.2); }
+    .sidebar-nav a.active { color: var(--white); background: var(--bg-subtle); border-left-color: var(--gold); font-weight: 500; }
 
-    .main-content { flex: 1; max-width: 720px; padding: 48px 48px 120px; margin: 0 auto; }
+    .main-content { flex: 1; max-width: 740px; padding: 52px 52px 120px; margin: 0 auto; animation: fadeIn 0.5s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    h1 { font-size: 20px; font-weight: 600; color: var(--bright); margin-bottom: 8px; letter-spacing: 1px; }
+    h1 { font-family: 'Instrument Serif', serif; font-size: 24px; font-weight: 600; color: var(--white); margin-bottom: 8px; letter-spacing: -0.01em; }
     .subtitle { color: var(--subtle); font-size: 13px; margin-bottom: 48px; }
     h2 {
       font-size: 11px; font-weight: 500; text-transform: uppercase;
@@ -107,8 +123,8 @@
     table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
     th, td { text-align: left; padding: 10px 12px; border: 1px solid var(--border); }
     th { background: var(--bg-subtle); font-weight: 500; color: var(--bright); }
-    a { color: var(--accent); }
-    a:hover { text-decoration: none; }
+    a { color: var(--gold-dim); transition: color 0.2s; }
+    a:hover { color: var(--gold); text-decoration: none; }
 
     @media (max-width: 768px) {
       .sidebar { display: none; }
@@ -145,7 +161,7 @@
         <a href="./getting-started.html">Getting Started</a>
         <a href="./architecture.html" class="active">Architecture</a>
         <a href="./configuration.html">Configuration</a>
-        <a href="./harness.html">Harness</a>
+        <a href="./harness.html">Strategies</a>
         <a href="./extending.html">Extending</a>
       </nav>
     </aside>
@@ -156,43 +172,37 @@
 
       <h2>System Overview</h2>
       <pre>
-┌─────────────────────────────────────────────────────────────────┐
-│                MAHORAGA HARNESS (Durable Object)                │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌─────────────────┐  │
-│  │ StockTwits│ │  Reddit   │ │  Twitter  │ │ Crypto Momentum │  │
-│  │ Sentiment │ │ (4 subs)  │ │  Confirm  │ │   (24/7)        │  │
-│  └─────┬─────┘ └─────┬─────┘ └─────┬─────┘ └────────┬────────┘  │
-│        └─────────────┴─────────────┴────────────────┘           │
-│                              │                                   │
-│                              ▼                                   │
-│                    ┌─────────────────┐                          │
-│                    │  Signal Cache   │                          │
-│                    │  (Persistent)   │                          │
-│                    └────────┬────────┘                          │
-│                             │                                    │
-│                             ▼                                    │
-│                    ┌─────────────────┐                          │
-│                    │  LLM Research   │                          │
-│                    │  (OpenAI)       │                          │
-│                    └────────┬────────┘                          │
-│                             │                                    │
-│                             ▼                                    │
-│                    ┌─────────────────┐                          │
-│                    │  Trading Logic  │                          │
-│                    │  + Staleness    │                          │
-│                    │  + Options      │                          │
-│                    └────────┬────────┘                          │
-└─────────────────────────────┼───────────────────────────────────┘
-                              │
-                              ▼
-                       ┌─────────────┐
-                       │   Alpaca    │
-                       │   Broker    │
-                       └─────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│              CORE ORCHESTRATOR  (Durable Object, ~1,400 lines)       │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   ┌──────────────────────────┐       ┌──────────────────────────┐   │
+│   │   STRATEGY MODULE        │       │     POLICY BROKER        │   │
+│   │                          │       │  PolicyEngine.evaluate() │   │
+│   │  ┌────────────────────┐  │       └────────────┬─────────────┘   │
+│   │  │  Gatherers         │  │                    │                  │
+│   │  │  StockTwits, Reddit│  │                    ▼                  │
+│   │  │  SEC, Crypto, X    │  │           ┌──────────────┐           │
+│   │  └────────┬───────────┘  │           │    Alpaca    │           │
+│   │           │              │           │    Broker    │           │
+│   │           ▼              │           └──────────────┘           │
+│   │  ┌────────────────────┐  │                                      │
+│   │  │  Prompts           │  │                                      │
+│   │  │  LLM templates     │  │                                      │
+│   │  └────────┬───────────┘  │                                      │
+│   │           │              │                                      │
+│   │           ▼              │                                      │
+│   │  ┌────────────────────┐  │       ┌──────────────────────────┐   │
+│   │  │  Rules             │  │       │     SIGNAL CACHE         │   │
+│   │  │  Entry, exit,      │  │       │     (Persistent)         │   │
+│   │  │  staleness, options│  │       └──────────────────────────┘   │
+│   │  └────────────────────┘  │                                      │
+│   └──────────────────────────┘                                      │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
       </pre>
 
-      <p>The Harness runs entirely on Cloudflare Workers with persistent state stored in Durable Object storage. It executes via an alarm every 30 seconds and survives restarts.</p>
+      <p>The Harness is a thin orchestrator (~1,400 lines) running on Cloudflare Workers with persistent state in Durable Object storage. It delegates data gathering, prompt construction, and trade rules to pluggable <strong>strategy modules</strong> via a strategy pattern, and routes all trade execution through the <strong>PolicyBroker</strong> which wraps PolicyEngine validation before hitting Alpaca. It executes via an alarm every 30 seconds and survives restarts.</p>
 
       <p>The MCP server provides tools for external integrations if needed.</p>
 
@@ -212,7 +222,7 @@
         <li>Check existing positions for stop-loss/take-profit</li>
         <li>Ask LLM to analyze each position (HOLD/SELL)</li>
         <li>Look for buy opportunities from researched signals</li>
-        <li>Execute trades via MCP server</li>
+        <li>Execute trades via PolicyBroker (PolicyEngine validation → Alpaca)</li>
       </ol>
 
       <h2>LLM Decision Making</h2>
@@ -248,10 +258,10 @@
 }</pre>
 
       <h2>Order Flow</h2>
-      <p>All orders go through a two-step process for safety:</p>
+      <p>The autonomous agent and external tools use different paths, but both pass through the same PolicyEngine validation.</p>
 
-      <h3>1. Preview</h3>
-      <p>Call <code>orders-preview</code> with order details. The policy engine validates:</p>
+      <h3>Autonomous Agent (Harness)</h3>
+      <p>The harness calls <code>PolicyBroker</code> directly, which wraps <code>PolicyEngine.evaluate()</code> and submits to Alpaca in a single step. The policy engine validates:</p>
       <ul>
         <li>Kill switch not active</li>
         <li>Not in cooldown period</li>
@@ -259,10 +269,10 @@
         <li>Within daily loss limits</li>
         <li>Sufficient buying power</li>
       </ul>
-      <p>Returns an approval token (valid 5 minutes).</p>
+      <p>If validation passes, the order is executed immediately through Alpaca.</p>
 
-      <h3>2. Submit</h3>
-      <p>Call <code>orders-submit</code> with the approval token. The order is executed through Alpaca.</p>
+      <h3>External Tools (MCP — Claude Desktop, etc.)</h3>
+      <p>External integrations use the two-step <code>orders-preview</code> / <code>orders-submit</code> MCP flow. Preview returns an approval token (valid 5 minutes); submit executes the order through Alpaca using that token.</p>
 
       <h2>MCP Tools</h2>
       <p>The MCP server at <code>/mcp</code> exposes tools for external integrations (e.g., Claude Desktop). Key tools:</p>
@@ -306,19 +316,26 @@ mahoraga/
 ├── .dev.vars                   # Local secrets (gitignored)
 ├── src/
 │   ├── index.ts                # Entry point & routing
+│   ├── core/
+│   │   ├── types.ts            # Shared types (Signal, AgentState, etc.)
+│   │   └── policy-broker.ts    # PolicyEngine-wrapped broker
 │   ├── durable-objects/
-│   │   └── mahoraga-harness.ts # Trading agent (customize this!)
-│   ├── mcp/
-│   │   └── agent.ts            # MCP tool definitions
-│   ├── policy/                 # Trade validation & risk
-│   ├── providers/
-│   │   ├── alpaca/             # Alpaca broker client
-│   │   ├── llm/                # LLM providers (OpenAI, AI SDK)
-│   │   └── social/             # StockTwits, Reddit scrapers
+│   │   └── mahoraga-harness.ts # Core orchestrator (~1,400 lines)
+│   ├── strategy/
+│   │   ├── types.ts            # Strategy interface contract
+│   │   ├── index.ts            # Active strategy selector
+│   │   └── default/            # Default strategy
+│   │       ├── gatherers/      # StockTwits, Reddit, SEC, crypto, Twitter
+│   │       ├── prompts/        # LLM prompt templates
+│   │       ├── rules/          # Entry/exit/staleness/options rules
+│   │       └── helpers/        # Ticker extraction, sentiment
+│   ├── mcp/                    # MCP server (external tools)
+│   ├── policy/                 # Trade validation & risk engine
+│   ├── providers/              # Alpaca, LLM providers
 │   ├── storage/                # D1 and KV storage
-│   └── schemas/                # Config schemas
+│   └── schemas/                # Config schemas (Zod)
 ├── dashboard/                  # React dashboard
-├── docs/                       # This documentation
+├── docs/                       # Documentation
 └── migrations/                 # D1 database migrations
       </pre>
     </main>

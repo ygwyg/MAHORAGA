@@ -21,39 +21,53 @@
   <link rel="icon" type="image/svg+xml" href="/mahoraga.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/og-image.png">
 
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link href="https://cdn.jsdelivr.net/npm/iosevka-webfont@14.0.0/iosevka.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0c0e; --bg-subtle: #0d1012; --border: rgba(122, 155, 168, 0.15);
-      --muted: #4a5a62; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4;
-      --accent: #7a9ba8; --success: #4a9868;
-      --sidebar-width: 200px;
+      --bg: #080a0c; --bg-subtle: #0c0f13; --surface: #0c0f13; --surface-hover: #11151a;
+      --border: rgba(122, 155, 168, 0.1); --border-hover: rgba(122, 155, 168, 0.18);
+      --muted: #4a5d68; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4; --white: #e4edf2;
+      --accent: #7a9ba8; --gold: #CFB97D; --gold-dim: #94814C; --gold-glow: rgba(207, 185, 125, 0.08);
+      --sidebar-width: 210px;
     }
     html { font-size: 14px; }
     body {
-      font-family: 'Iosevka Web', 'Iosevka', monospace;
+      font-family: 'JetBrains Mono', monospace;
       background: var(--bg); color: var(--text);
       min-height: 100vh; line-height: 1.7;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    ::selection { background: var(--accent); color: var(--bg); }
+    ::selection { background: rgba(207, 185, 125, 0.3); color: var(--white); }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(122, 155, 168, 0.03) 1px, transparent 0);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body > * { position: relative; z-index: 1; }
 
     .disclaimer {
-      background: #111; color: #999; text-align: center;
+      background: var(--surface); color: #999; text-align: center;
       padding: 10px 16px; font-size: 11px; letter-spacing: 0.5px;
     }
 
     .site-header {
       display: flex; justify-content: space-between; align-items: center;
       padding: 16px 24px; border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; background: var(--bg); z-index: 100;
+      position: sticky; top: 0; background: rgba(8, 10, 12, 0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 100;
     }
 
     .site-logo {
       display: flex; align-items: center; gap: 10px;
-      text-decoration: none; color: var(--bright);
+      text-decoration: none; color: var(--white);
     }
     .site-logo img { width: 18px; height: 18px; }
     .site-logo span { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
@@ -81,12 +95,14 @@
       color: var(--subtle); text-decoration: none; font-size: 12px;
       padding: 8px 12px; border-radius: 4px; transition: all 0.15s;
     }
-    .sidebar-nav a:hover { color: var(--bright); background: var(--bg-subtle); }
-    .sidebar-nav a.active { color: var(--bright); background: var(--bg-subtle); font-weight: 500; }
+    .sidebar-nav a { border-left: 2px solid transparent; }
+    .sidebar-nav a:hover { color: var(--bright); background: var(--bg-subtle); border-left-color: rgba(122, 155, 168, 0.2); }
+    .sidebar-nav a.active { color: var(--white); background: var(--bg-subtle); border-left-color: var(--gold); font-weight: 500; }
 
-    .main-content { flex: 1; max-width: 720px; padding: 48px 48px 120px; margin: 0 auto; }
+    .main-content { flex: 1; max-width: 740px; padding: 52px 52px 120px; margin: 0 auto; animation: fadeIn 0.5s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    h1 { font-size: 20px; font-weight: 600; color: var(--bright); margin-bottom: 8px; letter-spacing: 1px; }
+    h1 { font-family: 'Instrument Serif', serif; font-size: 24px; font-weight: 600; color: var(--white); margin-bottom: 8px; letter-spacing: -0.01em; }
     .subtitle { color: var(--subtle); font-size: 13px; margin-bottom: 48px; }
     h2 {
       font-size: 11px; font-weight: 500; text-transform: uppercase;
@@ -104,8 +120,8 @@
     pre code { background: none; padding: 0; }
     ul, ol { margin: 16px 0; padding-left: 24px; font-size: 13px; }
     li { margin-bottom: 8px; }
-    a { color: var(--accent); }
-    a:hover { text-decoration: none; }
+    a { color: var(--gold-dim); transition: color 0.2s; }
+    a:hover { color: var(--gold); text-decoration: none; }
 
     .note {
       background: rgba(122, 155, 168, 0.1); border: 1px solid rgba(122, 155, 168, 0.3);
@@ -147,7 +163,7 @@
         <a href="./getting-started.html">Getting Started</a>
         <a href="./architecture.html">Architecture</a>
         <a href="./configuration.html">Configuration</a>
-        <a href="./harness.html">Harness</a>
+        <a href="./harness.html">Strategies</a>
         <a href="./extending.html" class="active">Extending</a>
       </nav>
     </aside>
@@ -156,7 +172,7 @@
       <h1>Extending Mahoraga</h1>
       <p class="subtitle">Code examples for common customizations.</p>
 
-      <p>For a full customization guide, see <a href="./harness.html">Harness</a>. This page provides copy-paste examples.</p>
+      <p>For a full customization guide, see <a href="./harness.html">Strategies</a>. This page provides copy-paste examples.</p>
 
       <h2>Signal Format</h2>
       <p>Data sources return signals in this format:</p>
@@ -171,90 +187,113 @@
   volume: 42,             // Mention count
   freshness: 0.9,         // Time decay factor
   source_weight: 0.9,     // How much to trust this source
-  reason: "MySource: 42 mentions, 65% bullish"
+  reason: "MySource: 42 mentions, 65% bullish",
+  timestamp: 1707500000000
 }
       </pre>
 
       <h2>Example: News API Integration</h2>
+      <p>Write a standalone Gatherer module in your strategy directory:</p>
       <pre>
-private async gatherNewsAPI(): Promise&lt;Signal[]&gt; {
-  const signals: Signal[] = [];
-  
-  try {
-    const res = await fetch("https://newsapi.example/finance", {
-      headers: { "Authorization": `Bearer ${this.env.NEWS_API_KEY}` }
-    });
-    const data = await res.json();
-    
-    for (const article of data.articles) {
-      // Extract tickers from headline
-      const tickers = extractTickers(article.title + " " + article.description);
-      
-      // Simple sentiment from title keywords
-      const sentiment = article.title.toLowerCase().includes("surge") ? 0.7
-        : article.title.toLowerCase().includes("drop") ? -0.5
-        : 0.1;
-      
-      for (const symbol of tickers) {
-        signals.push({
-          symbol,
-          source: "news_api",
-          source_detail: article.source.name,
-          sentiment: sentiment * 0.8,  // Apply source weight
-          raw_sentiment: sentiment,
-          volume: 1,
-          freshness: calculateTimeDecay(new Date(article.publishedAt).getTime()),
-          source_weight: 0.8,
-          reason: `News: ${article.title.slice(0, 60)}...`,
-        });
+// src/strategy/my-strategy/gatherers/news.ts
+import type { Gatherer, StrategyContext } from "../../types";
+import { extractTickers } from "../default/helpers/ticker";
+import { calculateTimeDecay } from "../default/helpers/sentiment";
+
+export const newsGatherer: Gatherer = {
+  name: "news_api",
+  gather: async (ctx: StrategyContext) =&gt; {
+    const signals = [];
+    try {
+      const res = await fetch("https://newsapi.example/finance", {
+        headers: { Authorization: `Bearer ${ctx.env.NEWS_API_KEY}` },
+      });
+      const data = await res.json();
+
+      for (const article of data.articles) {
+        const tickers = extractTickers(article.title + " " + article.description);
+        const sentiment = article.title.toLowerCase().includes("surge") ? 0.7
+          : article.title.toLowerCase().includes("drop") ? -0.5 : 0.1;
+
+        for (const symbol of tickers) {
+          signals.push({
+            symbol,
+            source: "news_api",
+            source_detail: article.source.name,
+            sentiment: sentiment * 0.8,
+            raw_sentiment: sentiment,
+            volume: 1,
+            freshness: calculateTimeDecay(new Date(article.publishedAt).getTime() / 1000),
+            source_weight: 0.8,
+            reason: `News: ${article.title.slice(0, 60)}...`,
+            timestamp: Date.now(),
+          });
+        }
       }
+    } catch (error) {
+      ctx.log("NewsAPI", "error", { message: String(error) });
     }
-  } catch (error) {
-    this.log("NewsAPI", "error", { message: String(error) });
-  }
-  
-  return signals;
-}
+    return signals;
+  },
+};
       </pre>
 
       <h2>Example: Custom Exit Logic</h2>
-      <p>Add trailing stops or time-based exits in <code>runAnalyst()</code>:</p>
+      <p>Write a <code>selectExits</code> function that returns sell candidates:</p>
 
       <pre>
-// Trailing stop: sell if we're up 5%+ but have dropped 2% from peak
-const entry = this.state.positionEntries[pos.symbol];
-if (entry) {
-  const plPct = ((pos.current_price - entry.entry_price) / entry.entry_price) * 100;
-  const peakPct = ((entry.peak_price - entry.entry_price) / entry.entry_price) * 100;
-  
-  if (plPct > 5 && plPct < peakPct - 2) {
-    await this.executeSell(pos.symbol, pos.qty, "Trailing stop triggered");
+// src/strategy/my-strategy/rules/exits.ts
+import type { SellCandidate, StrategyContext } from "../../types";
+import type { Account, Position } from "../../../core/types";
+
+export function selectExits(
+  ctx: StrategyContext,
+  positions: Position[],
+  _account: Account
+): SellCandidate[] {
+  const exits: SellCandidate[] = [];
+
+  for (const pos of positions) {
+    const entry = ctx.positionEntries[pos.symbol];
+    if (!entry) continue;
+
+    const plPct = ((pos.current_price - entry.entry_price) / entry.entry_price) * 100;
+    const peakPct = ((entry.peak_price - entry.entry_price) / entry.entry_price) * 100;
+
+    // Trailing stop: sell if up 5%+ but dropped 2% from peak
+    if (plPct &gt; 5 &amp;&amp; plPct &lt; peakPct - 2) {
+      exits.push({ symbol: pos.symbol, reason: "Trailing stop triggered" });
+    }
   }
+
+  return exits;
 }
       </pre>
 
       <h2>Example: Multi-Source Confirmation</h2>
-      <p>Only trade when multiple sources agree:</p>
+      <p>Filter entries to only trade when multiple sources agree:</p>
 
       <pre>
-// Group signals by symbol
-const bySymbol = new Map&lt;string, Signal[]&gt;();
-for (const signal of this.state.signalCache) {
-  const arr = bySymbol.get(signal.symbol) || [];
-  arr.push(signal);
-  bySymbol.set(signal.symbol, arr);
-}
+// In your selectEntries function
+export function selectEntries(ctx, research, positions, account) {
+  // Group signals by symbol
+  const bySymbol = new Map();
+  for (const signal of ctx.signals) {
+    const arr = bySymbol.get(signal.symbol) || [];
+    arr.push(signal);
+    bySymbol.set(signal.symbol, arr);
+  }
 
-// Only consider symbols with 2+ sources agreeing
-const confirmed = [...bySymbol.entries()]
-  .filter(([_, signals]) => {
-    const sources = new Set(signals.map(s => s.source));
-    return sources.size >= 2;
-  })
-  .filter(([_, signals]) => {
-    const avgSentiment = signals.reduce((a, b) => a + b.sentiment, 0) / signals.length;
-    return avgSentiment >= 0.5;
-  });
+  // Only consider symbols with 2+ sources agreeing
+  const confirmed = [...bySymbol.entries()]
+    .filter(([_, signals]) =&gt; new Set(signals.map(s =&gt; s.source)).size &gt;= 2)
+    .filter(([_, signals]) =&gt; {
+      const avg = signals.reduce((a, b) =&gt; a + b.sentiment, 0) / signals.length;
+      return avg &gt;= 0.5;
+    });
+
+  // Return BuyCandidate[] for confirmed symbols...
+}
       </pre>
 
       <h2>Ideas for Extension</h2>

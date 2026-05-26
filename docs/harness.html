@@ -3,57 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Harness — Mahoraga 24/7 Cloudflare Durable Object Trading Agent</title>
-  <meta name="description" content="Run Mahoraga 24/7 without a local machine. The Harness is a Cloudflare Durable Object with persistent state, crypto trading, and multi-source sentiment signals.">
+  <title>Custom Strategies — Mahoraga Modular Trading Agent</title>
+  <meta name="description" content="Build custom trading strategies for Mahoraga without touching core files. Modular strategy pattern with gatherers, prompts, and entry/exit rules.">
   <link rel="canonical" href="https://mahoraga.dev/harness.html">
 
-  <meta property="og:title" content="The Harness — 24/7 Cloud Trading Agent">
-  <meta property="og:description" content="Run Mahoraga 24/7 on Cloudflare Workers. Persistent state, crypto trading, multi-source signals.">
+  <meta property="og:title" content="Custom Strategies — Mahoraga Modular Trading Agent">
+  <meta property="og:description" content="Build custom trading strategies with gatherers, prompts, and entry/exit rules. No core file changes needed.">
   <meta property="og:image" content="https://mahoraga.dev/og-image.png">
   <meta property="og:url" content="https://mahoraga.dev/harness.html">
   <meta property="og:type" content="article">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="The Harness — 24/7 Cloud Trading Agent">
-  <meta name="twitter:description" content="Run Mahoraga 24/7 on Cloudflare Workers without a local machine.">
+  <meta name="twitter:title" content="Custom Strategies — Mahoraga Modular Trading Agent">
+  <meta name="twitter:description" content="Build custom trading strategies with gatherers, prompts, and entry/exit rules.">
   <meta name="twitter:image" content="https://mahoraga.dev/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="/mahoraga.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/og-image.png">
 
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link href="https://cdn.jsdelivr.net/npm/iosevka-webfont@14.0.0/iosevka.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0c0e; --bg-subtle: #0d1012; --border: rgba(122, 155, 168, 0.15);
-      --muted: #4a5a62; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4;
-      --accent: #7a9ba8; --success: #4a9868;
-      --sidebar-width: 200px;
+      --bg: #080a0c; --bg-subtle: #0c0f13; --surface: #0c0f13; --surface-hover: #11151a;
+      --border: rgba(122, 155, 168, 0.1); --border-hover: rgba(122, 155, 168, 0.18);
+      --muted: #4a5d68; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4; --white: #e4edf2;
+      --accent: #7a9ba8; --gold: #CFB97D; --gold-dim: #94814C; --gold-glow: rgba(207, 185, 125, 0.08);
+      --sidebar-width: 210px;
     }
     html { font-size: 14px; }
     body {
-      font-family: 'Iosevka Web', 'Iosevka', monospace;
+      font-family: 'JetBrains Mono', monospace;
       background: var(--bg); color: var(--text);
       min-height: 100vh; line-height: 1.7;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    ::selection { background: var(--accent); color: var(--bg); }
+    ::selection { background: rgba(207, 185, 125, 0.3); color: var(--white); }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(122, 155, 168, 0.03) 1px, transparent 0);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body > * { position: relative; z-index: 1; }
 
     .disclaimer {
-      background: #111; color: #999; text-align: center;
+      background: var(--surface); color: #999; text-align: center;
       padding: 10px 16px; font-size: 11px; letter-spacing: 0.5px;
     }
 
     .site-header {
       display: flex; justify-content: space-between; align-items: center;
       padding: 16px 24px; border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; background: var(--bg); z-index: 100;
+      position: sticky; top: 0; background: rgba(8, 10, 12, 0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 100;
     }
 
     .site-logo {
       display: flex; align-items: center; gap: 10px;
-      text-decoration: none; color: var(--bright);
+      text-decoration: none; color: var(--white);
     }
     .site-logo img { width: 18px; height: 18px; }
     .site-logo span { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
@@ -81,12 +95,14 @@
       color: var(--subtle); text-decoration: none; font-size: 12px;
       padding: 8px 12px; border-radius: 4px; transition: all 0.15s;
     }
-    .sidebar-nav a:hover { color: var(--bright); background: var(--bg-subtle); }
-    .sidebar-nav a.active { color: var(--bright); background: var(--bg-subtle); font-weight: 500; }
+    .sidebar-nav a { border-left: 2px solid transparent; }
+    .sidebar-nav a:hover { color: var(--bright); background: var(--bg-subtle); border-left-color: rgba(122, 155, 168, 0.2); }
+    .sidebar-nav a.active { color: var(--white); background: var(--bg-subtle); border-left-color: var(--gold); font-weight: 500; }
 
-    .main-content { flex: 1; max-width: 720px; padding: 48px 48px 120px; margin: 0 auto; }
+    .main-content { flex: 1; max-width: 740px; padding: 52px 52px 120px; margin: 0 auto; animation: fadeIn 0.5s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    h1 { font-size: 20px; font-weight: 600; color: var(--bright); margin-bottom: 8px; letter-spacing: 1px; }
+    h1 { font-family: 'Instrument Serif', serif; font-size: 24px; font-weight: 600; color: var(--white); margin-bottom: 8px; letter-spacing: -0.01em; }
     .subtitle { color: var(--subtle); font-size: 13px; margin-bottom: 48px; }
     h2 {
       font-size: 11px; font-weight: 500; text-transform: uppercase;
@@ -107,8 +123,8 @@
     table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
     th, td { text-align: left; padding: 10px 12px; border: 1px solid var(--border); }
     th { background: var(--bg-subtle); font-weight: 500; color: var(--bright); }
-    a { color: var(--accent); }
-    a:hover { text-decoration: none; }
+    a { color: var(--gold-dim); transition: color 0.2s; }
+    a:hover { color: var(--gold); text-decoration: none; }
 
     .note {
       background: rgba(122, 155, 168, 0.1); border: 1px solid rgba(122, 155, 168, 0.3);
@@ -119,7 +135,7 @@
       border-radius: 3px; font-weight: 500; letter-spacing: 0.5px;
     }
     .tag-tune { background: rgba(122, 155, 168, 0.2); color: var(--bright); }
-    .tag-toggle { background: rgba(74, 152, 104, 0.2); color: #6fbf8a; }
+    .tag-toggle { background: rgba(207, 185, 125, 0.15); color: #CFB97D; }
     .tag-custom { background: rgba(184, 152, 72, 0.2); color: #c9b362; }
 
     @media (max-width: 768px) {
@@ -157,194 +173,207 @@
         <a href="./getting-started.html">Getting Started</a>
         <a href="./architecture.html">Architecture</a>
         <a href="./configuration.html">Configuration</a>
-        <a href="./harness.html" class="active">Harness</a>
+        <a href="./harness.html" class="active">Strategies</a>
         <a href="./extending.html">Extending</a>
       </nav>
     </aside>
 
     <main class="main-content">
-      <h1>The Harness</h1>
-      <p class="subtitle">Customize the trading agent code.</p>
+      <h1>Custom Strategies</h1>
+      <p class="subtitle">Build your own trading strategy without touching core files.</p>
 
       <h2>Overview</h2>
-      <p>The Harness (<code>src/durable-objects/mahoraga-harness.ts</code>) is the core trading agent. It runs as a Cloudflare Durable Object with persistent state and alarm-based scheduling.</p>
-      <p>This page is for developers who want to modify the trading logic, add data sources, or customize LLM prompts. For setup, see <a href="./getting-started.html">Getting Started</a>. For config options, see <a href="./configuration.html">Configuration</a>.</p>
+      <p>The core harness (<code>src/durable-objects/mahoraga-harness.ts</code>) is a thin orchestrator (~1,400 lines). It handles scheduling, state persistence, and the alarm loop — but all customizable trading logic lives in strategy modules under <code>src/strategy/</code>.</p>
+      <p>To build your own strategy, you create a <code>Strategy</code> object that implements the <code>Strategy</code> interface defined in <code>src/strategy/types.ts</code>. Then you change one import line in <code>src/strategy/index.ts</code> to activate it. No need to touch the harness or any core files.</p>
 
-      <h2>Code Markers</h2>
-      <p>The harness file uses markers to help you find what to modify:</p>
-      
-      <table>
-        <tr>
-          <th>Marker</th>
-          <th>Meaning</th>
-        </tr>
-        <tr>
-          <td><span class="tag tag-tune">[TUNE]</span></td>
-          <td>Numeric values you can adjust (thresholds, limits, percentages)</td>
-        </tr>
-        <tr>
-          <td><span class="tag tag-toggle">[TOGGLE]</span></td>
-          <td>Features you can enable/disable</td>
-        </tr>
-        <tr>
-          <td><span class="tag tag-custom">[CUSTOMIZABLE]</span></td>
-          <td>Sections with code you might want to modify</td>
-        </tr>
-      </table>
+      <h2>The Strategy Interface</h2>
+      <p>Your strategy must satisfy this interface (simplified from <code>src/strategy/types.ts</code>):</p>
+      <pre><code>export interface Strategy {
+  name: string;
+  defaultConfig: Record&lt;string, unknown&gt;;
+  gatherers: Gatherer[];
+  prompts: { ... };
+  selectEntries: (ctx, research, positions, account) =&gt; BuyCandidate[];
+  selectExits: (ctx, positions, account) =&gt; SellCandidate[];
+}</code></pre>
+      <p>Each field gives the harness what it needs: <code>gatherers</code> to collect signals, <code>prompts</code> to drive LLM research, and <code>selectEntries</code>/<code>selectExits</code> to make trading decisions.</p>
 
-      <h2>Section Guide</h2>
-      <table>
-        <tr>
-          <th>Section</th>
-          <th>Lines</th>
-          <th>What to Customize</th>
-        </tr>
-        <tr>
-          <td>AgentConfig</td>
-          <td>51-104</td>
-          <td>All tunable parameters (risk, sizing, thresholds)</td>
-        </tr>
-        <tr>
-          <td>SOURCE_CONFIG</td>
-          <td>218-252</td>
-          <td>Source weights, flair multipliers, time decay</td>
-        </tr>
-        <tr>
-          <td>Helper Functions</td>
-          <td>328-408</td>
-          <td>Sentiment detection, ticker extraction</td>
-        </tr>
-        <tr>
-          <td>Alarm Handler</td>
-          <td>430-510</td>
-          <td>What runs when, intervals, order of operations</td>
-        </tr>
-        <tr>
-          <td>Data Gathering</td>
-          <td>640-920</td>
-          <td>Add new data sources here</td>
-        </tr>
-        <tr>
-          <td>Twitter</td>
-          <td>980-1200</td>
-          <td>Confirmation logic, budget caps</td>
-        </tr>
-        <tr>
-          <td>LLM Research</td>
-          <td>1210-1540</td>
-          <td>Prompts for signal and position analysis</td>
-        </tr>
-        <tr>
-          <td>Trading Logic</td>
-          <td>1550-1730</td>
-          <td>Entry/exit rules, position sizing</td>
-        </tr>
-        <tr>
-          <td>Staleness</td>
-          <td>1740-1800</td>
-          <td>When to exit positions that lost momentum</td>
-        </tr>
-        <tr>
-          <td>Options</td>
-          <td>1810-2010</td>
-          <td>Delta, DTE, options-specific limits</td>
-        </tr>
-        <tr>
-          <td>Pre-Market</td>
-          <td>2020-2140</td>
-          <td>Morning analysis and plan execution</td>
-        </tr>
-      </table>
+      <h2>Strategy Context</h2>
+      <p>Every strategy method receives a <code>StrategyContext</code> object. This is your interface to the outside world:</p>
+      <ul>
+        <li><code>env</code>, <code>config</code>, <code>llm</code> — environment bindings, merged configuration, and the LLM provider.</li>
+        <li><code>broker</code> — a <code>PolicyEngine</code>-wrapped broker. Call <code>ctx.broker.buy()</code> and <code>ctx.broker.sell()</code> to place trades; the policy engine validates risk limits before execution.</li>
+        <li><code>state</code> — per-strategy key/value state. Use <code>ctx.state.get(key)</code> and <code>ctx.state.set(key, value)</code> to persist data across alarm cycles.</li>
+        <li><code>signals</code> — the current signal cache (all gathered signals from the current cycle).</li>
+        <li><code>log</code>, <code>trackLLMCost</code>, <code>sleep</code> — logging, LLM cost tracking, and async sleep utilities.</li>
+      </ul>
 
-      <h2>Adding a New Data Source</h2>
-      <p>The most common customization is adding a new data source. Here's how:</p>
+      <h2>Adding a Gatherer</h2>
+      <p>Gatherers collect signals from external sources. Each gatherer returns an array of <code>Signal</code> objects. Create a new file in your strategy folder:</p>
+      <pre><code>// src/strategy/my-strategy/gatherers/my-source.ts
+import type { Gatherer, StrategyContext } from "../../types";
 
-      <h3>1. Create a gather method</h3>
-      <pre>private async gatherMySource(): Promise&lt;Signal[]&gt; {
-  const signals: Signal[] = [];
-  
-  try {
-    // Fetch from your API
-    const res = await fetch("https://your-api.com/data");
+export const myGatherer: Gatherer = {
+  name: "my-source",
+  gather: async (ctx: StrategyContext) =&gt; {
+    const res = await fetch("https://api.example.com/data");
     const data = await res.json();
-    
-    for (const item of data.items) {
-      const tickers = extractTickers(item.text);
-      const sentiment = detectSentiment(item.text);
-      
-      for (const symbol of tickers) {
-        signals.push({
-          symbol,
-          source: "my_source",
-          source_detail: "my_source_detail",
-          sentiment: sentiment * 0.9,  // Apply source weight
-          raw_sentiment: sentiment,
-          volume: 1,
-          freshness: 1.0,
-          source_weight: 0.9,
-          reason: `MySource: ${item.summary.slice(0, 50)}`,
-        });
-      }
-    }
-  } catch (error) {
-    this.log("MySource", "error", { message: String(error) });
-  }
-  
-  return signals;
-}</pre>
-
-      <h3>2. Add to runDataGatherers</h3>
-      <pre>private async runDataGatherers(): Promise&lt;void&gt; {
-  const [stocktwitsSignals, redditSignals, cryptoSignals, mySignals] = 
-    await Promise.all([
-      this.gatherStockTwits(),
-      this.gatherReddit(),
-      this.gatherCrypto(),
-      this.gatherMySource(),  // Add here
-    ]);
-  
-  this.state.signalCache = [
-    ...stocktwitsSignals, 
-    ...redditSignals, 
-    ...cryptoSignals,
-    ...mySignals,  // And here
-  ];
-}</pre>
-
-      <h3>3. Add source weight</h3>
-      <pre>const SOURCE_CONFIG = {
-  weights: {
-    stocktwits: 0.85,
-    reddit_wallstreetbets: 0.6,
-    // ...
-    my_source: 0.9,  // Add your source weight
+    return data.items.map(item =&gt; ({
+      symbol: item.ticker,
+      source: "my_source",
+      source_detail: "my_source_v1",
+      sentiment: item.score,
+      raw_sentiment: item.score,
+      volume: 1,
+      freshness: 1.0,
+      source_weight: 0.9,
+      reason: `MySource: ${item.summary}`,
+      timestamp: Date.now(),
+    }));
   },
-  // ...
-};</pre>
+};</code></pre>
 
-      <h2>Modifying Source Weights</h2>
-      <p>The <code>SOURCE_CONFIG</code> object controls how much to trust each data source:</p>
-      <pre>const SOURCE_CONFIG = {
-  weights: {
-    stocktwits: 0.85,           // Decent signal, some noise
-    reddit_wallstreetbets: 0.6, // High volume, lots of memes
-    reddit_stocks: 0.9,         // Higher quality discussions
-    reddit_investing: 0.8,      // Long-term focused
-    twitter_fintwit: 0.95,      // Real traders
-  },
-  flairMultipliers: {
-    "DD": 1.5,                  // Due Diligence - boost
-    "YOLO": 0.6,               // Entertainment - penalize
-    "Meme": 0.4,
-  },
-  decayHalfLifeMinutes: 120,    // How fast old posts lose weight
-};</pre>
+      <h2>Custom Entry/Exit Rules</h2>
+      <p><code>selectEntries</code> receives research results and returns buy candidates. <code>selectExits</code> receives open positions and returns sell candidates.</p>
 
-      <h2>Customizing LLM Prompts</h2>
-      <p>The LLM research prompts are in the <code>researchSignal()</code> and <code>analyzePositionWithLLM()</code> methods. You can modify what context the LLM receives and how it should respond.</p>
+      <h3>Entry example</h3>
+      <pre><code>selectEntries: (ctx, research, positions, account) =&gt; {
+  return research
+    .filter(r =&gt; r.verdict === "BUY" &amp;&amp; r.confidence &gt;= 0.7)
+    .filter(r =&gt; !positions.find(p =&gt; p.symbol === r.symbol))
+    .map(r =&gt; ({
+      symbol: r.symbol,
+      reason: r.reasoning,
+      confidence: r.confidence,
+      maxAllocation: 0.05, // 5% of portfolio per position
+    }));
+}</code></pre>
+
+      <h3>Exit example</h3>
+      <pre><code>selectExits: (ctx, positions, account) =&gt; {
+  return positions
+    .filter(p =&gt; p.unrealizedPnlPct &gt;= 0.15 || p.unrealizedPnlPct &lt;= -0.08)
+    .map(p =&gt; ({
+      symbol: p.symbol,
+      reason: p.unrealizedPnlPct &gt;= 0.15 ? "take-profit" : "stop-loss",
+      qty: p.qty,
+    }));
+}</code></pre>
+
+      <h2>Custom Prompts</h2>
+      <p>Prompt templates control what the LLM sees and how it responds. Each prompt builder is a function that returns <code>{ system, user, maxTokens }</code>:</p>
+      <pre><code>// src/strategy/my-strategy/prompts/research.ts
+import type { ResearchSignalPromptBuilder } from "../../types";
+
+export const myResearchPrompt: ResearchSignalPromptBuilder = (
+  symbol, sentiment, sources, price
+) =&gt; ({
+  system: "You are a contrarian analyst. Only recommend BUY for oversold bounces.",
+  user: `Analyze ${symbol} at $${price}. Sentiment: ${sentiment}. Sources: ${sources.join(", ")}.
+  JSON: { "verdict": "BUY|SKIP", "confidence": 0-1, "reasoning": "..." }`,
+  maxTokens: 200,
+});</code></pre>
+
+      <h2>Assembling Your Strategy</h2>
+      <p>Bring your gatherers, prompts, and rules together into a single <code>Strategy</code> object. You can mix default modules with your own:</p>
+      <pre><code>// src/strategy/my-strategy/index.ts
+import { stocktwitsGatherer } from "../default/gatherers/stocktwits";
+import { myGatherer } from "./gatherers/my-source";
+import { myResearchPrompt } from "./prompts/research";
+
+export const myStrategy: Strategy = {
+  name: "my-strategy",
+  defaultConfig: { min_sentiment_score: 0.2 },
+  gatherers: [stocktwitsGatherer, myGatherer],
+  prompts: {
+    researchSignal: myResearchPrompt,
+    researchPosition: null,
+    analyzeSignals: null,
+    premarketAnalysis: null,
+  },
+  selectEntries: (ctx, research, positions, account) =&gt; { ... },
+  selectExits: (ctx, positions, account) =&gt; { ... },
+};</code></pre>
+
+      <h2>Activating Your Strategy</h2>
+      <p>Once assembled, activate your strategy by changing one import in the strategy index file:</p>
+      <pre><code>// src/strategy/index.ts — change this one line
+import { myStrategy } from "./my-strategy";
+export const activeStrategy = myStrategy;</code></pre>
+      <p>That is the only change needed. The harness reads <code>activeStrategy</code> and uses it for every alarm cycle.</p>
+
+      <h2>Default Strategy Reference</h2>
+      <p>The built-in default strategy lives in <code>src/strategy/default/</code>. You can use any of its modules in your own strategy, or use it as a reference implementation.</p>
+
+      <table>
+        <tr>
+          <th>File</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td><code>index.ts</code></td>
+          <td>Strategy assembly</td>
+        </tr>
+        <tr>
+          <td><code>config.ts</code></td>
+          <td>DEFAULT_CONFIG, SOURCE_CONFIG</td>
+        </tr>
+        <tr>
+          <td><code>gatherers/stocktwits.ts</code></td>
+          <td>StockTwits sentiment</td>
+        </tr>
+        <tr>
+          <td><code>gatherers/reddit.ts</code></td>
+          <td>Reddit (4 subreddits)</td>
+        </tr>
+        <tr>
+          <td><code>gatherers/sec.ts</code></td>
+          <td>SEC EDGAR filings</td>
+        </tr>
+        <tr>
+          <td><code>gatherers/crypto.ts</code></td>
+          <td>Crypto momentum signals</td>
+        </tr>
+        <tr>
+          <td><code>gatherers/twitter.ts</code></td>
+          <td>Twitter confirmation</td>
+        </tr>
+        <tr>
+          <td><code>prompts/research.ts</code></td>
+          <td>Signal &amp; position research prompts</td>
+        </tr>
+        <tr>
+          <td><code>prompts/analyst.ts</code></td>
+          <td>Analyst LLM prompt</td>
+        </tr>
+        <tr>
+          <td><code>prompts/premarket.ts</code></td>
+          <td>Pre-market analysis prompt</td>
+        </tr>
+        <tr>
+          <td><code>rules/entries.ts</code></td>
+          <td>Buy candidate selection</td>
+        </tr>
+        <tr>
+          <td><code>rules/exits.ts</code></td>
+          <td>Sell candidate selection (TP/SL/staleness)</td>
+        </tr>
+        <tr>
+          <td><code>rules/staleness.ts</code></td>
+          <td>Staleness scoring</td>
+        </tr>
+        <tr>
+          <td><code>rules/options.ts</code></td>
+          <td>Options contract selection</td>
+        </tr>
+        <tr>
+          <td><code>rules/crypto-trading.ts</code></td>
+          <td>Crypto entry/exit rules</td>
+        </tr>
+      </table>
 
       <div class="note">
-        <strong>Tip:</strong> The Harness stores state in Durable Object storage. To reset state, redeploy with a new migration tag in <code>wrangler.jsonc</code>.
+        <strong>Tip:</strong> The harness stores state in Durable Object storage. To reset state, redeploy with a new migration tag in <code>wrangler.jsonc</code>.
       </div>
 
       <p>For all configuration options and API endpoints, see <a href="./configuration.html">Configuration</a>.</p>

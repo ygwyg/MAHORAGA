@@ -1,4 +1,5 @@
 import { getHarnessStub } from "./durable-objects/mahoraga-harness";
+import { checkRateLimit, incrementRequest } from "./durable-objects/session";
 import type { Env } from "./env.d";
 import { handleCronEvent } from "./jobs/cron";
 import { MahoragaMcpAgent } from "./mcp/agent";
@@ -91,6 +92,21 @@ export default {
     }
 
     if (url.pathname.startsWith("/agent")) {
+      if (!isAuthorized(request, env)) {
+        return unauthorizedResponse(corsHeaders);
+      }
+
+      // Rate limiting via SessionDO
+      const tokenHash = request.headers.get("Authorization")?.slice(7, 15) || "anon";
+      const rateCheck = await checkRateLimit(env, `agent-${tokenHash}`);
+      if (!rateCheck.allowed) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded", resetAt: rateCheck.resetAt }), {
+          status: 429,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      await incrementRequest(env, `agent-${tokenHash}`);
+
       const stub = getHarnessStub(env);
       const agentPath = url.pathname.replace("/agent", "") || "/status";
       const agentUrl = new URL(agentPath, "http://harness");

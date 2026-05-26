@@ -87,28 +87,41 @@
   }
   </script>
 
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link href="https://cdn.jsdelivr.net/npm/iosevka-webfont@14.0.0/iosevka.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0c0e; --bg-subtle: #0d1012; --border: rgba(122, 155, 168, 0.15);
-      --muted: #4a5a62; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4;
-      --accent: #7a9ba8; --success: #4a9868;
-      --sidebar-width: 200px;
+      --bg: #080a0c; --bg-subtle: #0c0f13; --surface: #0c0f13; --surface-hover: #11151a;
+      --border: rgba(122, 155, 168, 0.1); --border-hover: rgba(122, 155, 168, 0.18);
+      --muted: #4a5d68; --subtle: #6a7a82; --text: #7a9ba8; --bright: #c8dce4; --white: #e4edf2;
+      --accent: #7a9ba8; --gold: #CFB97D; --gold-dim: #94814C; --gold-glow: rgba(207, 185, 125, 0.08);
+      --sidebar-width: 210px;
     }
     html { font-size: 14px; }
     body {
-      font-family: 'Iosevka Web', 'Iosevka', monospace;
+      font-family: 'JetBrains Mono', monospace;
       background: var(--bg); color: var(--text);
       min-height: 100vh; line-height: 1.7;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    ::selection { background: var(--accent); color: var(--bg); }
+    ::selection { background: rgba(207, 185, 125, 0.3); color: var(--white); }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(122, 155, 168, 0.03) 1px, transparent 0);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body > * { position: relative; z-index: 1; }
 
     /* Disclaimer bar */
     .disclaimer {
-      background: #111;
+      background: var(--surface);
       color: #999;
       text-align: center;
       padding: 10px 16px;
@@ -125,7 +138,9 @@
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
-      background: var(--bg);
+      background: rgba(8, 10, 12, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       z-index: 100;
     }
 
@@ -134,7 +149,7 @@
       align-items: center;
       gap: 10px;
       text-decoration: none;
-      color: var(--bright);
+      color: var(--white);
     }
 
     .site-logo img {
@@ -206,31 +221,37 @@
       font-size: 12px;
       padding: 8px 12px;
       border-radius: 4px;
+      border-left: 2px solid transparent;
       transition: all 0.15s;
     }
 
     .sidebar-nav a:hover {
       color: var(--bright);
       background: var(--bg-subtle);
+      border-left-color: rgba(122, 155, 168, 0.2);
     }
 
     .sidebar-nav a.active {
-      color: var(--bright);
+      color: var(--white);
       background: var(--bg-subtle);
+      border-left-color: var(--gold);
       font-weight: 500;
     }
 
     /* Main content */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
     .main-content {
       flex: 1;
       max-width: 720px;
       padding: 48px 48px 120px;
       margin: 0 auto;
+      animation: fadeIn 0.5s ease both;
     }
 
     h1 {
-      font-size: 20px; font-weight: 600; color: var(--bright);
-      margin-bottom: 8px; letter-spacing: 1px;
+      font-family: 'Instrument Serif', serif;
+      font-size: 28px; font-weight: 400; color: var(--white);
+      margin-bottom: 8px; letter-spacing: -0.01em;
     }
     .subtitle { color: var(--subtle); font-size: 13px; margin-bottom: 48px; }
     
@@ -275,8 +296,8 @@
     }
     th { background: var(--bg-subtle); font-weight: 500; color: var(--bright); }
     
-    a { color: var(--accent); }
-    a:hover { text-decoration: none; }
+    a { color: var(--gold-dim); transition: color 0.2s; }
+    a:hover { color: var(--gold); text-decoration: none; }
 
     /* Mobile */
     @media (max-width: 768px) {
@@ -322,7 +343,7 @@
         <a href="./getting-started.html" class="active">Getting Started</a>
         <a href="./architecture.html">Architecture</a>
         <a href="./configuration.html">Configuration</a>
-        <a href="./harness.html">Harness</a>
+        <a href="./harness.html">Strategies</a>
         <a href="./extending.html">Extending</a>
       </nav>
     </aside>

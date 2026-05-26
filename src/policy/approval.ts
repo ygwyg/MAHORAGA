@@ -21,7 +21,7 @@ export async function generateApprovalToken(params: GenerateApprovalParams): Pro
   const { preview, policyResult, secret, db, ttlSeconds } = params;
 
   const approvalId = generateId();
-  const previewHash = hashObject(preview);
+  const previewHash = await hashObject(preview);
   const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
 
   const tokenData = `${approvalId}:${previewHash}:${expiresAt}`;

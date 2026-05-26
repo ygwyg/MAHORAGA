@@ -20,7 +20,7 @@ MAHORAGA monitors social sentiment from StockTwits and Reddit, uses AI (OpenAI, 
 - **Staleness Detection** — Auto-exit positions that lose momentum
 - **Pre-Market Analysis** — Prepare trading plans before market open
 - **Discord Notifications** — Get alerts on BUY signals
-- **Fully Customizable** — Well-documented with `[TUNE]` and `[CUSTOMIZABLE]` markers
+- **Pluggable Strategy System** — Create custom strategies without touching core files
 
 ## Requirements
 
@@ -139,23 +139,64 @@ curl -H "Authorization: Bearer $MAHORAGA_TOKEN" \
   http://localhost:8787/agent/enable
 ```
 
-## Customizing the Harness
+## Custom Strategies
 
-The main trading logic is in `src/durable-objects/mahoraga-harness.ts`. It's documented with markers to help you find what to modify:
+Mahoraga uses a **pluggable strategy system**. The core harness is a thin orchestrator — all customizable logic lives in strategy modules. You never need to modify core files.
 
-| Marker | Meaning |
-|--------|---------|
-| `[TUNE]` | Numeric values you can adjust |
-| `[TOGGLE]` | Features you can enable/disable |
-| `[CUSTOMIZABLE]` | Sections with code you might want to modify |
+### How it works
 
-### Adding a New Data Source
+1. Create `src/strategy/my-strategy/index.ts` implementing the `Strategy` interface
+2. Change one import line in `src/strategy/index.ts`
 
-1. Create a new `gather*()` method that returns `Signal[]`
-2. Add it to `runDataGatherers()` Promise.all
-3. Add source weight to `SOURCE_CONFIG.weights`
+```typescript
+// src/strategy/index.ts
+import { myStrategy } from "./my-strategy";
+export const activeStrategy = myStrategy;
+```
 
-See `docs/harness.html` for detailed customization guide.
+### What you can customize
+
+| Component | File | What it does |
+|-----------|------|--------------|
+| **Gatherers** | `gatherers/*.ts` | Fetch signals from data sources (StockTwits, Reddit, etc.) |
+| **Prompts** | `prompts/*.ts` | LLM prompt templates for research and analysis |
+| **Entry rules** | `rules/entries.ts` | Decide which signals to buy |
+| **Exit rules** | `rules/exits.ts` | Decide when to sell positions |
+| **Config** | `config.ts` | Default parameters and source weights |
+
+You can reuse default gatherers, mix in custom ones, override prompts, and define your own entry/exit rules — all without touching core files.
+
+### Adding a new data source
+
+Create a gatherer that returns `Signal[]`:
+
+```typescript
+import type { Gatherer, StrategyContext } from "../../types";
+
+const myGatherer: Gatherer = {
+  name: "my-source",
+  gather: async (ctx: StrategyContext) => {
+    const res = await fetch("https://your-api.com/data");
+    const data = await res.json();
+    return data.items.map(item => ({
+      symbol: item.ticker,
+      source: "my_source",
+      source_detail: "my_source_v1",
+      sentiment: item.sentiment,
+      raw_sentiment: item.sentiment,
+      volume: 1,
+      freshness: 1.0,
+      source_weight: 0.9,
+      reason: `MySource: ${item.summary}`,
+      timestamp: Date.now(),
+    }));
+  },
+};
+```
+
+Then include it in your strategy's `gatherers` array.
+
+See `docs/harness.html` for the full customization guide.
 
 ## Configuration
 
@@ -269,13 +310,26 @@ This creates a Cloudflare Access Application with email verification or One-Time
 mahoraga/
 ├── wrangler.jsonc              # Cloudflare Workers config
 ├── src/
-│   ├── index.ts                # Entry point
+│   ├── index.ts                # Entry point & routing
+│   ├── core/
+│   │   ├── types.ts            # Shared types (Signal, AgentState, etc.)
+│   │   └── policy-broker.ts    # PolicyEngine-wrapped trade execution
 │   ├── durable-objects/
-│   │   ├── mahoraga-harness.ts # THE HARNESS - customize this!
-│   │   └── session.ts
+│   │   └── mahoraga-harness.ts # Core orchestrator (thin — delegates to strategy)
+│   ├── strategy/
+│   │   ├── types.ts            # Strategy interface contract
+│   │   ├── index.ts            # Active strategy selector (change this one line)
+│   │   └── default/            # Default "sentiment-momentum" strategy
+│   │       ├── index.ts        # Strategy assembly
+│   │       ├── config.ts       # Default config & source weights
+│   │       ├── gatherers/      # StockTwits, Reddit, SEC, crypto, Twitter
+│   │       ├── prompts/        # LLM prompt templates
+│   │       ├── rules/          # Entry/exit/staleness/options/crypto rules
+│   │       └── helpers/        # Ticker extraction, sentiment analysis
 │   ├── mcp/                    # MCP server & tools
-│   ├── policy/                 # Trade validation
-│   └── providers/              # Alpaca, OpenAI clients
+│   ├── policy/                 # Trade validation & risk engine
+│   ├── providers/              # Alpaca, LLM providers
+│   └── schemas/                # Config schemas (Zod)
 ├── dashboard/                  # React dashboard
 ├── docs/                       # Documentation
 └── migrations/                 # D1 database migrations
