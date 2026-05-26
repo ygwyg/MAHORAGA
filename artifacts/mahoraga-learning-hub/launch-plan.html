@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Launch Plan | MAHORAGA Learning Hub</title>
+    <link rel="icon" href="./favicon.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">M</span><span>Launch Plan</span></div>
+      <nav class="nav" aria-label="Main">
+        <a href="./index.html">Overview</a>
+        <a href="./trading-101.html">Trading 101</a>
+        <a href="./alpaca-101.html">Alpaca</a>
+        <a href="./mahoraga-system.html">System</a>
+        <a href="./launch-plan.html" aria-current="page">Launch Plan</a>
+        <button class="source-button" data-copy-source>AI Source</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Deployment runbook</p>
+          <h1>Ship the system safely before you trade.</h1>
+          <p>
+            The repository is updated and verified locally. The next launch step is not "turn it on live."
+            The next step is a staged Cloudflare deployment with paper credentials, a working LLM deployment, and clear kill-switch controls.
+          </p>
+        </div>
+        <aside class="briefing-panel">
+          <h2>Right-now blockers</h2>
+          <div class="signal-grid">
+            <div class="signal"><strong>GitHub</strong><span>Upstream is read-only for this account; branch was pushed to your fork.</span></div>
+            <div class="signal"><strong>LLM</strong><span>Live logs showed `DeploymentNotFound`; Azure/OpenAI deployment config must be corrected.</span></div>
+            <div class="signal"><strong>Pages</strong><span>Dashboard API proxy needs deployment so `/api/status` reaches the Worker.</span></div>
+            <div class="signal"><strong>Paper</strong><span>Confirm `ALPACA_PAPER=true` before any agent schedule runs.</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Current repo state</p>
+          <h2>What has already been completed.</h2>
+        </div>
+        <ul class="checklist">
+          <li><span class="check">✓</span><span>Created branch `codex/mahoraga-update-deploy`.</span></li>
+          <li><span class="check">✓</span><span>Committed your local dashboard/rebrand/API proxy work before merging.</span></li>
+          <li><span class="check">✓</span><span>Fetched upstream and merged `origin/main` into the branch.</span></li>
+          <li><span class="check">✓</span><span>Resolved conflicts in the dashboard and shared types while keeping upstream strategy improvements.</span></li>
+          <li><span class="check">✓</span><span>Verified with typecheck, tests, check/lint, dashboard build, and Cloudflare Worker dry-run deploy.</span></li>
+          <li><span class="check">✓</span><span>Pushed the branch to your fork and opened a draft PR against upstream.</span></li>
+        </ul>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">Cloudflare architecture</p>
+          <h2>Recommended hosting setup.</h2>
+        </div>
+        <div class="grid two">
+          <article class="card accent-teal">
+            <h3>Worker API</h3>
+            <p>
+              Host the trading agent and API at a Worker URL such as `mahoraga.ansar-ece.workers.dev`.
+              This is where cron schedules, Durable Objects, D1, KV, secrets, and Alpaca execution live.
+            </p>
+          </article>
+          <article class="card accent-green">
+            <h3>Pages dashboard</h3>
+            <p>
+              Host the Vite dashboard on Cloudflare Pages. The dashboard should proxy `/api/*` requests to the Worker,
+              and the dashboard token should authenticate operator requests.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Secrets and model config</p>
+          <h2>Do not paste API keys into chat.</h2>
+          <p class="lead">
+            The safest approach is to enter keys directly into local `.dev.vars` for development and Cloudflare Worker secrets for production.
+            Azure model deployment names must match exactly; the current `DeploymentNotFound` error usually means the configured model/deployment name is wrong for that Azure resource.
+          </p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Secret</th><th>Purpose</th><th>Safe value for first launch</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ALPACA_API_KEY</td><td>Paper trading API key</td><td>Paper key only</td></tr>
+              <tr><td>ALPACA_API_SECRET</td><td>Paper trading API secret</td><td>Paper secret only</td></tr>
+              <tr><td>ALPACA_PAPER</td><td>Paper/live selector</td><td>`true`</td></tr>
+              <tr><td>MAHORAGA_API_TOKEN</td><td>Dashboard/API auth token</td><td>Long random token</td></tr>
+              <tr><td>KILL_SWITCH_SECRET</td><td>Emergency stop control</td><td>Long random token, stored separately</td></tr>
+              <tr><td>OPENAI_API_KEY</td><td>OpenAI-compatible API key</td><td>OpenAI or Azure key stored as secret</td></tr>
+              <tr><td>OPENAI_BASE_URL</td><td>Base URL for chat completions</td><td>Must match provider path expected by code</td></tr>
+              <tr><td>LLM_MODEL</td><td>Model or Azure deployment name</td><td>Exact deployment name, not a guess</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">Execution sequence</p>
+          <h2>The safe launch order.</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="time-label">1. GitHub</div>
+            <div><h3>Merge or deploy from fork branch</h3><p>Either get write access to upstream or merge the draft PR. For deployment, the fork branch is already usable.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">2. Worker</div>
+            <div><h3>Set secrets, migrate D1, deploy Worker</h3><p>Use Cloudflare secrets and keep `ALPACA_PAPER=true`. Deploy only after the dry-run passes.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">3. Dashboard</div>
+            <div><h3>Build and deploy Pages</h3><p>Deploy dashboard `dist` so `_redirects` proxies `/api/*` to the Worker instead of returning dashboard HTML.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">4. Observe</div>
+            <div><h3>Run without live risk</h3><p>Watch logs, account status, LLM responses, rejected decisions, accepted decisions, and paper fills.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">5. Iterate</div>
+            <div><h3>Improve one surface at a time</h3><p>Start with journaling and dashboard review. Then improve rules. Only then expand assets or strategy scope.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Revenue thinking</p>
+          <h2>How this could eventually make money.</h2>
+        </div>
+        <div class="grid three">
+          <article class="card accent-green">
+            <h3>Trade edge</h3>
+            <p>Best but hardest path: prove a repeatable paper edge, then carefully graduate to tiny live capital with strict drawdown caps.</p>
+          </article>
+          <article class="card accent-teal">
+            <h3>Operator product</h3>
+            <p>Turn the dashboard into a paid decision-review cockpit for other paper traders or semi-automated operators.</p>
+          </article>
+          <article class="card accent-amber">
+            <h3>Research engine</h3>
+            <p>Use MAHORAGA as a signal and thesis generator, selling reports or alerts before allowing automated execution.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="callout warning">
+          <h3>Decision rule</h3>
+          <p>
+            Do not move to live trading until paper trading has a clean audit trail, stable uptime, known failure modes, risk caps that you trust,
+            and a written rule for when the system must stop.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Educational material only. Use Cloudflare secrets or local `.dev.vars`; never paste broker or model keys into chat.
+    </footer>
+    <script src="./script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trading 101 | MAHORAGA Learning Hub</title>
+    <link rel="icon" href="./favicon.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">M</span><span>Trading 101</span></div>
+      <nav class="nav" aria-label="Main">
+        <a href="./index.html">Overview</a>
+        <a href="./trading-101.html" aria-current="page">Trading 101</a>
+        <a href="./alpaca-101.html">Alpaca</a>
+        <a href="./mahoraga-system.html">System</a>
+        <a href="./launch-plan.html">Launch Plan</a>
+        <button class="source-button" data-copy-source>AI Source</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Market basics</p>
+          <h1>Trading is decision-making under uncertainty.</h1>
+          <p>
+            A trade is not a prediction. It is a bet with an entry, size, invalidation point, exit plan, and expected payoff.
+            The professional habit is to define risk before you chase reward.
+          </p>
+        </div>
+        <aside class="briefing-panel">
+          <h2>Vocabulary anchor</h2>
+          <div class="signal-grid">
+            <div class="signal"><strong>Ticker</strong><span>A short symbol for an asset, like AAPL, SPY, or BTC/USD.</span></div>
+            <div class="signal"><strong>Position</strong><span>What you currently own or owe in the market.</span></div>
+            <div class="signal"><strong>Spread</strong><span>The gap between buyer bid and seller ask.</span></div>
+            <div class="signal"><strong>P&L</strong><span>Profit and loss, realized or unrealized.</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">The market object model</p>
+          <h2>Every trade starts with an asset and an order.</h2>
+        </div>
+        <div class="grid four">
+          <article class="card accent-teal">
+            <h3>Asset</h3>
+            <p>A thing you can trade: stock, ETF, option contract, or crypto pair. Each asset has eligibility rules, trading hours, and liquidity.</p>
+          </article>
+          <article class="card accent-amber">
+            <h3>Order</h3>
+            <p>An instruction to buy or sell. The order defines side, quantity, order type, time in force, and sometimes limit or stop prices.</p>
+          </article>
+          <article class="card accent-green">
+            <h3>Fill</h3>
+            <p>The broker confirms that part or all of your order executed. Paper fills are simulated; live fills interact with real market liquidity.</p>
+          </article>
+          <article class="card accent-rose">
+            <h3>Risk</h3>
+            <p>The amount you can lose if the idea is wrong. Good systems cap risk before they allow a trade.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">Order types</p>
+          <h2>How buying and selling actually works.</h2>
+          <p class="lead">Markets are auctions. Buyers place bids, sellers place asks, and orders match when prices cross.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Order</th><th>What it means</th><th>When beginners use it</th><th>Main risk</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Market</td>
+                <td>Buy or sell immediately at the best available market price.</td>
+                <td>Highly liquid assets where immediate execution matters.</td>
+                <td>You do not control the exact price.</td>
+              </tr>
+              <tr>
+                <td>Limit</td>
+                <td>Buy no higher than your limit or sell no lower than your limit.</td>
+                <td>When price discipline matters more than speed.</td>
+                <td>The order may not fill.</td>
+              </tr>
+              <tr>
+                <td>Stop</td>
+                <td>Trigger a market order after a stop price is reached.</td>
+                <td>Risk exits and downside protection.</td>
+                <td>Fast moves can fill worse than expected.</td>
+              </tr>
+              <tr>
+                <td>Stop limit</td>
+                <td>Trigger a limit order after a stop price is reached.</td>
+                <td>Controlled exits in normal markets.</td>
+                <td>The limit may prevent an exit during a sharp move.</td>
+              </tr>
+              <tr>
+                <td>Bracket</td>
+                <td>Entry with linked take-profit and stop-loss exits.</td>
+                <td>Automated risk management for a planned trade.</td>
+                <td>Bad parameters can exit too early or too late.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Strategy basics</p>
+          <h2>A strategy is a rule set, not a vibe.</h2>
+        </div>
+        <div class="flow">
+          <div class="flow-step"><h3>Universe</h3><p class="mini">What can the system trade? Example: only liquid large-cap stocks and major ETFs.</p></div>
+          <div class="flow-step"><h3>Signal</h3><p class="mini">What suggests opportunity? Example: catalyst news plus volume spike plus trend.</p></div>
+          <div class="flow-step"><h3>Entry</h3><p class="mini">What exact condition allows a buy or sell?</p></div>
+          <div class="flow-step"><h3>Exit</h3><p class="mini">What exact condition locks profit, cuts loss, or times out?</p></div>
+          <div class="flow-step"><h3>Review</h3><p class="mini">Did the thesis, timing, sizing, and execution behave as expected?</p></div>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="grid two">
+          <article class="card accent-green">
+            <h3>Watchlists</h3>
+            <p>
+              A watchlist is a small universe of symbols you care about. It reduces cognitive load.
+              Instead of asking "what should we trade anywhere?", you ask "which of these known symbols meets our rules today?"
+            </p>
+            <div class="tag-row">
+              <span class="tag">AAPL</span><span class="tag">MSFT</span><span class="tag">NVDA</span><span class="tag">SPY</span><span class="tag">QQQ</span>
+            </div>
+          </article>
+          <article class="card accent-amber">
+            <h3>Options</h3>
+            <p>
+              Options are contracts whose value depends on an underlying asset. A call benefits from upside; a put benefits from downside.
+              They can lose value quickly due to time decay and volatility changes, so options should remain disabled until the stock strategy is observable.
+            </p>
+            <div class="tag-row">
+              <span class="tag">Calls</span><span class="tag">Puts</span><span class="tag">Strike</span><span class="tag">Expiration</span><span class="tag">Premium</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">The beginner checklist</p>
+          <h2>Before any bot trades, answer these questions.</h2>
+        </div>
+        <ul class="checklist">
+          <li><span class="check">✓</span><span>What symbols is the strategy allowed to trade?</span></li>
+          <li><span class="check">✓</span><span>How much can one trade lose if the idea is wrong?</span></li>
+          <li><span class="check">✓</span><span>How much can the whole day lose before the kill switch activates?</span></li>
+          <li><span class="check">✓</span><span>What data made the system enter, and what data will make it exit?</span></li>
+          <li><span class="check">✓</span><span>Can you replay the decision tomorrow and understand it without the code?</span></li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Educational material only. Paper trading first. No real-money trading recommendation is being made.
+    </footer>
+    <script src="./script.js"></script>
+  </body>
+</html>

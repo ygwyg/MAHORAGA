@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MAHORAGA Learning Hub</title>
+    <link rel="icon" href="./favicon.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">M</span><span>MAHORAGA Learning Hub</span></div>
+      <nav class="nav" aria-label="Main">
+        <a href="./index.html" aria-current="page">Overview</a>
+        <a href="./trading-101.html">Trading 101</a>
+        <a href="./alpaca-101.html">Alpaca</a>
+        <a href="./mahoraga-system.html">System</a>
+        <a href="./launch-plan.html">Launch Plan</a>
+        <button class="source-button" data-copy-source>AI Source</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Founder briefing</p>
+          <h1>From paper trading curiosity to controlled trading system.</h1>
+          <p>
+            This hub teaches the market basics, Alpaca's role, MAHORAGA's architecture, and the safest deployment path.
+            The goal is not to turn on live trading fast; it is to build an operating system for learning, measuring, and only then risking capital.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="./launch-plan.html">Start with the runbook</a>
+            <a class="button secondary" href="./mahoraga-system.html">Understand MAHORAGA</a>
+          </div>
+        </div>
+        <aside class="briefing-panel" aria-label="Current status">
+          <h2>Current project status</h2>
+          <div class="signal-grid">
+            <div class="signal">
+              <strong>Merged</strong>
+              <span>Latest upstream pulled into local branch with conflicts resolved.</span>
+            </div>
+            <div class="signal">
+              <strong>Verified</strong>
+              <span>Typecheck, tests, lint/check, dashboard build, and Worker dry-run passed.</span>
+            </div>
+            <div class="signal">
+              <strong>Paper-ready</strong>
+              <span>Alpaca paper account is the right first operating mode.</span>
+            </div>
+            <div class="signal">
+              <strong>Blocked</strong>
+              <span>Live deployment needs LLM/Azure configuration fixed before real operation.</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Mental model</p>
+          <h2>There are three systems you are learning at once.</h2>
+          <p class="lead">
+            The fastest way to become competent is to separate the domains. Trading teaches what decisions mean.
+            Alpaca teaches how those decisions become API orders. MAHORAGA teaches how automation turns data into controlled actions.
+          </p>
+        </div>
+        <div class="grid three">
+          <article class="card accent-amber">
+            <h3>Trading</h3>
+            <p>You learn tickers, bid/ask spreads, order types, positions, exits, risk per trade, and why a profitable strategy is mostly risk control.</p>
+            <a href="./trading-101.html">Open Trading 101</a>
+          </article>
+          <article class="card accent-teal">
+            <h3>Alpaca</h3>
+            <p>You learn the broker API: account, assets, market data, orders, positions, watchlists, paper trading, live trading, streams, CLI, and MCP.</p>
+            <a href="./alpaca-101.html">Open Alpaca guide</a>
+          </article>
+          <article class="card accent-green">
+            <h3>MAHORAGA</h3>
+            <p>You learn the agent loop: gather signals, ask an LLM for research, score opportunities, pass risk gates, execute through Alpaca, and journal outcomes.</p>
+            <a href="./mahoraga-system.html">Open system guide</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">How the bot thinks</p>
+          <h2>The trading loop is a pipeline, not magic.</h2>
+        </div>
+        <div class="flow">
+          <div class="flow-step">
+            <h3>1. Observe</h3>
+            <p class="mini">Gather market data, news, social signals, current positions, and account risk state.</p>
+          </div>
+          <div class="flow-step">
+            <h3>2. Research</h3>
+            <p class="mini">Use the LLM to summarize catalysts, risk, context, and confidence for candidate symbols.</p>
+          </div>
+          <div class="flow-step">
+            <h3>3. Decide</h3>
+            <p class="mini">Rules decide whether a candidate is tradeable, sized correctly, and allowed by policy.</p>
+          </div>
+          <div class="flow-step">
+            <h3>4. Execute</h3>
+            <p class="mini">Orders are sent to Alpaca paper trading first; fills and open orders are monitored.</p>
+          </div>
+          <div class="flow-step">
+            <h3>5. Learn</h3>
+            <p class="mini">Every decision should be journaled so you can compare thesis, execution, and outcome.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Recommended sequence</p>
+          <h2>Your next 30 days should be boring on purpose.</h2>
+          <p class="lead">
+            The business outcome we want is confidence, not action. A controlled paper phase lets you build data,
+            learn the product, and avoid paying tuition to the market before the system is observable.
+          </p>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="time-label">Days 1-3</div>
+            <div>
+              <h3>Get the project healthy</h3>
+              <p>Use the forked branch, fix LLM deployment configuration, deploy Worker and dashboard, keep Alpaca in paper mode, and verify the dashboard reads Worker JSON.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">Days 4-10</div>
+            <div>
+              <h3>Run observation-only</h3>
+              <p>Let MAHORAGA collect events and research signals while order placement remains disabled or capped to tiny paper trades.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">Days 11-20</div>
+            <div>
+              <h3>Measure paper trades</h3>
+              <p>Turn on paper orders with strict daily loss, position, and asset limits. Review every fill like a product analytics event.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">Days 21-30</div>
+            <div>
+              <h3>Choose one extension</h3>
+              <p>Do not add ten strategies. Add one measurable improvement: better journaling, a safer risk gate, a single new signal, or a cleaner dashboard review flow.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="grid two">
+          <div class="callout warning">
+            <h3>Important safety stance</h3>
+            <p>
+              Keep this on Alpaca paper trading until you can explain every order MAHORAGA places, why it placed it,
+              how much it could lose, and what condition would make it exit.
+            </p>
+          </div>
+          <div class="callout success">
+            <h3>Revenue path</h3>
+            <p>
+              Treat revenue as a research product: build a repeatable strategy, quantify edge, reduce drawdowns,
+              and only then consider live capital or a paid analytics/product layer around the system.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Educational material only. This is not financial advice, investment advice, or a recommendation to trade real money.
+    </footer>
+    <script src="./script.js"></script>
+  </body>
+</html>

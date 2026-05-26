@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Alpaca 101 | MAHORAGA Learning Hub</title>
+    <link rel="icon" href="./favicon.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">M</span><span>Alpaca 101</span></div>
+      <nav class="nav" aria-label="Main">
+        <a href="./index.html">Overview</a>
+        <a href="./trading-101.html">Trading 101</a>
+        <a href="./alpaca-101.html" aria-current="page">Alpaca</a>
+        <a href="./mahoraga-system.html">System</a>
+        <a href="./launch-plan.html">Launch Plan</a>
+        <button class="source-button" data-copy-source>AI Source</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Broker API</p>
+          <h1>Alpaca is the execution and market data layer.</h1>
+          <p>
+            MAHORAGA does not directly touch an exchange. It talks to Alpaca.
+            Alpaca provides paper accounts, account data, assets, orders, positions, market data, streams, watchlists, CLI tooling, and an MCP server.
+          </p>
+        </div>
+        <aside class="briefing-panel">
+          <h2>Best starting choice</h2>
+          <p>
+            Start on the free Basic plan with paper trading. Upgrade to Algo Trader Plus only when the system specifically needs full SIP stock data,
+            OPRA options data, more WebSocket subscriptions, or higher historical data throughput.
+          </p>
+          <div class="tag-row">
+            <span class="tag">Paper first</span><span class="tag">Basic plan</span><span class="tag">IEX equities</span><span class="tag">No real money</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Alpaca objects</p>
+          <h2>The API is a small set of primitives.</h2>
+        </div>
+        <div class="grid three">
+          <article class="card accent-teal"><h3>Account</h3><p>Identity, cash, equity, buying power, status, and trading permissions.</p></article>
+          <article class="card accent-amber"><h3>Assets</h3><p>Tradable instruments and metadata: symbol, class, exchange, tradability, fractionability.</p></article>
+          <article class="card accent-green"><h3>Orders</h3><p>Instructions to buy or sell. MAHORAGA submits orders only after strategy and risk checks.</p></article>
+          <article class="card accent-rose"><h3>Positions</h3><p>Current holdings. A strategy must know what it already owns before opening more risk.</p></article>
+          <article class="card accent-teal"><h3>Market data</h3><p>Quotes, trades, bars, snapshots, historical data, and real-time streams.</p></article>
+          <article class="card accent-amber"><h3>Watchlists</h3><p>Curated symbol sets that help narrow attention and strategy scope.</p></article>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">Paper trading</p>
+          <h2>Paper trading is simulation, not proof.</h2>
+          <p class="lead">
+            Alpaca documents paper trading as a real-time simulation that uses market data and simulated fills. It is excellent for learning API behavior,
+            system reliability, and decision quality. It does not fully model market impact, information leakage, queue position, price improvement, fees, or dividends.
+          </p>
+        </div>
+        <div class="grid two">
+          <div class="callout success">
+            <h3>What paper trading is good for</h3>
+            <p>Testing credentials, order payloads, dashboard workflows, signal quality, risk limits, alerting, and whether you understand each decision.</p>
+          </div>
+          <div class="callout warning">
+            <h3>What it cannot prove</h3>
+            <p>That a strategy will make money live. Paper fills can be cleaner than real market execution, especially in fast or illiquid markets.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Plan comparison</p>
+          <h2>Basic versus Algo Trader Plus.</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Area</th><th>Basic</th><th>Algo Trader Plus</th><th>What it means for MAHORAGA</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Price</td>
+                <td>Free</td>
+                <td>$99/month in Alpaca docs at research time</td>
+                <td>Basic is enough to learn and run low-frequency paper tests.</td>
+              </tr>
+              <tr>
+                <td>Equity real-time coverage</td>
+                <td>IEX only</td>
+                <td>All US stock exchanges via SIP</td>
+                <td>Upgrade if signals depend on full-market quote/trade accuracy.</td>
+              </tr>
+              <tr>
+                <td>Options data</td>
+                <td>Indicative feed</td>
+                <td>OPRA feed</td>
+                <td>Do not pay for options data until the stock strategy is safe and observed.</td>
+              </tr>
+              <tr>
+                <td>WebSocket subscriptions</td>
+                <td>Limited</td>
+                <td>Higher or unlimited depending on asset class</td>
+                <td>Upgrade when the watchlist grows beyond Basic limits.</td>
+              </tr>
+              <tr>
+                <td>Historical data calls</td>
+                <td>Lower limit and latest-15-minute restriction</td>
+                <td>Higher limit and no latest-15-minute restriction</td>
+                <td>Upgrade for serious backtesting, scanning, and intraday analytics.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">Tooling</p>
+          <h2>CLI and MCP are useful, but they should not bypass safety.</h2>
+        </div>
+        <div class="grid two">
+          <article class="card accent-green">
+            <h3>Alpaca CLI</h3>
+            <p>
+              The CLI is useful for operator workflows: inspect accounts, place test orders, check positions, and automate repeatable command-line tasks.
+              Treat it like an admin console.
+            </p>
+          </article>
+          <article class="card accent-teal">
+            <h3>Alpaca MCP Server</h3>
+            <p>
+              The MCP server lets AI tools interact with Alpaca through structured tools. It can research markets and place orders through natural language clients.
+              For MAHORAGA, it is better as an operator assistant than as the core trading path.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Credential rule</p>
+          <h2>Never paste API keys into chat.</h2>
+          <p class="lead">
+            Use environment variables, Cloudflare Worker secrets, or local `.dev.vars` files that are not committed to GitHub.
+            Paper and live Alpaca keys must stay separate.
+          </p>
+        </div>
+        <pre><code>ALPACA_API_KEY=paper_key_here
+ALPACA_API_SECRET=paper_secret_here
+ALPACA_PAPER=true
+MAHORAGA_API_TOKEN=dashboard_token_here</code></pre>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Sources to review: Alpaca Paper Trading, Market Data API, Orders, Options Trading, CLI, and MCP Server docs.
+    </footer>
+    <script src="./script.js"></script>
+  </body>
+</html>

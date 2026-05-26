@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MAHORAGA System | MAHORAGA Learning Hub</title>
+    <link rel="icon" href="./favicon.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="mark">M</span><span>MAHORAGA System</span></div>
+      <nav class="nav" aria-label="Main">
+        <a href="./index.html">Overview</a>
+        <a href="./trading-101.html">Trading 101</a>
+        <a href="./alpaca-101.html">Alpaca</a>
+        <a href="./mahoraga-system.html" aria-current="page">System</a>
+        <a href="./launch-plan.html">Launch Plan</a>
+        <button class="source-button" data-copy-source>AI Source</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Architecture</p>
+          <h1>MAHORAGA is an agentic trading harness.</h1>
+          <p>
+            It runs on Cloudflare, uses a Durable Object as the always-consistent brain, stores state in D1 and KV,
+            calls OpenAI-compatible LLMs for research, and executes paper trades through Alpaca.
+          </p>
+        </div>
+        <aside class="briefing-panel">
+          <h2>Plain-English version</h2>
+          <p>
+            MAHORAGA is a disciplined assistant. It watches markets, writes research, checks rules,
+            asks a risk manager for permission, and then sends orders to Alpaca only when the policy allows it.
+          </p>
+        </aside>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">System map</p>
+          <h2>The major components.</h2>
+        </div>
+        <div class="grid three">
+          <article class="card accent-teal">
+            <h3>Cloudflare Worker</h3>
+            <p>Public HTTP API and scheduled cron entry point. It handles dashboard requests, agent control, CORS, auth, and routing into the harness.</p>
+          </article>
+          <article class="card accent-green">
+            <h3>Durable Object</h3>
+            <p>The single-state coordinator. Durable Objects prevent multiple overlapping brains from racing each other when deciding trades.</p>
+          </article>
+          <article class="card accent-amber">
+            <h3>D1 database</h3>
+            <p>Stores structured trading records: events, approvals, trades, journals, and risk state.</p>
+          </article>
+          <article class="card accent-teal">
+            <h3>KV cache</h3>
+            <p>Stores lower-friction cached data such as signals and temporary market context.</p>
+          </article>
+          <article class="card accent-green">
+            <h3>Alpaca provider</h3>
+            <p>Wraps account, market data, orders, options, positions, and trade execution calls.</p>
+          </article>
+          <article class="card accent-rose">
+            <h3>LLM provider</h3>
+            <p>Summarizes catalysts, confidence, risk, and decision context. The current blocker is deployment/model configuration.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">Runtime loop</p>
+          <h2>How MAHORAGA decides when to trade.</h2>
+        </div>
+        <div class="flow">
+          <div class="flow-step"><h3>Cron/API wakes agent</h3><p class="mini">Schedules or dashboard controls trigger the Worker.</p></div>
+          <div class="flow-step"><h3>Harness loads state</h3><p class="mini">Durable Object reads account, positions, risk limits, signals, and configuration.</p></div>
+          <div class="flow-step"><h3>Strategy gathers signals</h3><p class="mini">Gatherers collect market data, news, social/catalyst context, and current portfolio facts.</p></div>
+          <div class="flow-step"><h3>LLM researches candidates</h3><p class="mini">Prompts turn raw signals into a thesis, risk notes, confidence, and trade context.</p></div>
+          <div class="flow-step"><h3>Rules and policy decide</h3><p class="mini">Entry/exit rules plus risk checks decide whether an order is allowed.</p></div>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="section-head">
+          <p class="eyebrow">Strategy pattern</p>
+          <h2>The newest upstream update made MAHORAGA easier to extend.</h2>
+          <p class="lead">
+            Upstream extracted strategy code out of the monolithic harness into `src/core` and `src/strategy`.
+            That is important because strategy logic can now evolve without turning the whole bot into one risky file.
+          </p>
+        </div>
+        <div class="grid two">
+          <article class="card accent-teal">
+            <h3>Core layer</h3>
+            <p>
+              Core code is the platform: environment types, policy broker, execution primitives, and shared contracts.
+              Change this carefully because every strategy depends on it.
+            </p>
+          </article>
+          <article class="card accent-green">
+            <h3>Strategy layer</h3>
+            <p>
+              Strategy code is where new trading ideas belong: gatherers, prompts, entry rules, exit rules, and strategy registration.
+              This is where founder learning should focus first.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="band alt">
+        <div class="section-head">
+          <p class="eyebrow">Extension ladder</p>
+          <h2>Build capability in this order.</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="time-label">Level 1</div>
+            <div><h3>Observability</h3><p>Add better decision journals: why the signal mattered, what the LLM said, which rule passed, which risk gate approved it.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">Level 2</div>
+            <div><h3>Risk controls</h3><p>Improve daily loss limits, max open positions, asset allowlists, options disablement, and manual approval workflows.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">Level 3</div>
+            <div><h3>Signal quality</h3><p>Add one high-quality signal source or filter. Measure whether it improves paper outcomes before adding another.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">Level 4</div>
+            <div><h3>Backtesting and replay</h3><p>Create a replay harness that can run a strategy over historical data and compare decisions against future outcomes.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="time-label">Level 5</div>
+            <div><h3>Productization</h3><p>Turn the dashboard into an operator cockpit: thesis cards, approvals, charts, audit trails, alerts, and weekly performance summaries.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="grid two">
+          <div class="callout warning">
+            <h3>Known safety caveat</h3>
+            <p>
+              Options execution should stay disabled until reviewed. The stock path has clearer policy controls;
+              options are complex and can lose money fast even when direction is right.
+            </p>
+          </div>
+          <div class="callout success">
+            <h3>Best first product improvement</h3>
+            <p>
+              Add a decision-review cockpit before adding new trading logic. Revenue comes from measured edge;
+              measured edge requires high-quality records.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Educational material only. MAHORAGA should remain on Alpaca paper trading until every decision is auditable.
+    </footer>
+    <script src="./script.js"></script>
+  </body>
+</html>
