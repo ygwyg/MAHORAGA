@@ -6,14 +6,14 @@ An autonomous, LLM-powered trading agent that runs 24/7 on Cloudflare Workers.
 
 [![Discord](https://img.shields.io/discord/1467592472158015553?color=7289da&label=Discord&logo=discord&logoColor=white)](https://discord.gg/vMFnHe2YBh)
 
-MAHORAGA monitors social sentiment from StockTwits and Reddit, uses AI (OpenAI, Anthropic, Google, xAI, DeepSeek via AI SDK) to analyze signals, and executes trades through Alpaca. It runs as a Cloudflare Durable Object with persistent state, automatic restarts, and 24/7 crypto trading support.
+MAHORAGA monitors social sentiment from StockTwits, Reddit, and the optional Adanos Market Sentiment API, uses AI (OpenAI, Anthropic, Google, xAI, DeepSeek via AI SDK) to analyze signals, and executes trades through Alpaca. It runs as a Cloudflare Durable Object with persistent state, automatic restarts, and 24/7 crypto trading support.
 
 <img width="1278" height="957" alt="dashboard" src="https://github.com/user-attachments/assets/56473ab6-e2c6-45fc-9e32-cf85e69f1a2d" />
 
 ## Features
 
 - **24/7 Operation** — Runs on Cloudflare Workers, no local machine required
-- **Multi-Source Signals** — StockTwits, Reddit (4 subreddits), Twitter confirmation
+- **Multi-Source Signals** — StockTwits, Reddit (4 subreddits), optional Adanos sentiment, Twitter confirmation
 - **Multi-Provider LLM** — OpenAI, Anthropic, Google, xAI, DeepSeek via AI SDK or Cloudflare AI Gateway
 - **Crypto Trading** — Trade BTC, ETH, SOL around the clock
 - **Options Support** — High-conviction options plays
@@ -82,6 +82,7 @@ npx wrangler secret put OPENAI_BASE_URL        # Optional: override OpenAI base 
 
 # Optional
 npx wrangler secret put ALPACA_PAPER         # "true" for paper trading (recommended)
+npx wrangler secret put ADANOS_API_KEY       # Optional structured stock and crypto sentiment
 npx wrangler secret put TWITTER_BEARER_TOKEN
 npx wrangler secret put DISCORD_WEBHOOK_URL
 npx wrangler secret put KILL_SWITCH_SECRET   # Emergency kill switch (separate from API token)
@@ -199,6 +200,12 @@ Then include it in your strategy's `gatherers` array.
 See `docs/harness.html` for the full customization guide.
 
 ## Configuration
+
+### Adanos Market Sentiment
+
+Set `ADANOS_API_KEY` to add structured Reddit sentiment for trending stocks and, when `crypto_enabled` is true, every configured crypto symbol. The integration uses a seven-day UTC window with explicit `from` and `to` dates and caches results for eight hours to preserve API quota. It is disabled when the secret is absent and fails open with progressively downweighted cached data for up to 24 hours when Adanos is unavailable. Equity tradability and allowed exchanges are still enforced centrally by the broker policy before any order.
+
+Create an API key at [adanos.org/register](https://adanos.org/register) and see the [Adanos API documentation](https://api.adanos.org/docs).
 
 | Setting | Default | Description |
 |---------|---------|-------------|
@@ -322,7 +329,7 @@ mahoraga/
 │   │   └── default/            # Default "sentiment-momentum" strategy
 │   │       ├── index.ts        # Strategy assembly
 │   │       ├── config.ts       # Default config & source weights
-│   │       ├── gatherers/      # StockTwits, Reddit, SEC, crypto, Twitter
+│   │       ├── gatherers/      # StockTwits, Adanos, Reddit, SEC, crypto, Twitter
 │   │       ├── prompts/        # LLM prompt templates
 │   │       ├── rules/          # Entry/exit/staleness/options/crypto rules
 │   │       └── helpers/        # Ticker extraction, sentiment analysis
