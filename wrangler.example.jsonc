@@ -39,6 +39,7 @@
 	//
 	// Optional:
 	// - ALPACA_PAPER ("true" for paper trading)
+	// - ADANOS_API_KEY (structured stock and crypto sentiment; https://adanos.org/register)
 	// - TWITTER_BEARER_TOKEN
 	// - DISCORD_WEBHOOK_URL
 	"d1_databases": [

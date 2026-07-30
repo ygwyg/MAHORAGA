@@ -13,6 +13,7 @@ import type { AgentConfig, AgentState } from "../../core/types";
 export const SOURCE_CONFIG = {
   weights: {
     stocktwits: 0.85,
+    adanos: 0.9,
     reddit_wallstreetbets: 0.6,
     reddit_stocks: 0.9,
     reddit_investing: 0.8,
